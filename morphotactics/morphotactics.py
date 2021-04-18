@@ -1,8 +1,13 @@
 import pynini
 
-# slots: list of Slot objects
-def compile(*slots):
-  # TODO: slots should be a set!
+"""
+Returns an OpenFST FST representing the morphotactic rules of an entire lexicon
+Resolves all dependencies between continuation classes of multiple slots
+
+Args:
+  slots: set of Slot objects (not a list)
+"""
+def compile(slots):
   fst = pynini.Fst()
   s = fst.add_state()
   fst.set_start(s)
