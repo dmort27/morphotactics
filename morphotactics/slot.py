@@ -13,7 +13,7 @@ class Slot:
         a rule's destination state is a final state if continuation classes are empty
     start: the slot is one of root slots (root class in LEXC)
   """
-  def __init__(name, rules, start=False):
+  def __init__(self, name, rules, start=False):
     self.name = name
     # empty FST
     fst = pynini.Fst()
