@@ -4,11 +4,14 @@ import graphviz
 from IPython.display import SVG, display
 
 class StemGueser:
-  # min_word_constraint: a minimal word constraint expressed as a limited regular expression of phone classes
-  # alphabet (optional): dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
-  # assumes long vowels have been expanded
-  # returns an OpenFst FST corresponding to the regex with classes substituted with symbols
-  # converts a limited PCRE regex (scope, quantification) to an OpenFst FST
+  """
+  Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
+  Substitutes phoneme classes with symbols.
+  Assumes long vowels have been expanded. 
+  Args:
+    min_word_constraint: a minimal word constraint expressed as a limited regular expression of phone classes
+    alphabet (optional): dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
+  """
   def __init__(min_word_constraint, alphabet={}):
     # phone classes could overlap so phones to set first
     symbols = {symb for symbol_class in alphabet.values() for symb in symbol_class}
