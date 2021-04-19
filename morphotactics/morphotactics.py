@@ -22,10 +22,13 @@ def compile(slots):
       # transitions within same slot could have different continuation classes
       # concatenate the rule with the continuation class' FST
       rule = pynini.cross(upper, lower)
-      # each transition could have many continuation_classes 
-      continuation_fsts = [slot_map[cont_class] for cont_class in continuation_classes]
-      continuation_union = pynini.union(*continuation_fsts)
-      slot.fst = pynini.union(slot.fst, pynini.concat(rule, continuation_union))
+      # each transition could have many continuation_classes
+      if len(continuation_classes) > 0:
+        continuation_fsts = [slot_map[cont_class] for cont_class in continuation_classes]
+        continuation_union = pynini.union(*continuation_fsts)
+        slot.fst = pynini.union(slot.fst, pynini.concat(rule, continuation_union))
+      else:
+        slot.fst = rule
 
   # concatenate the FST with the starting classes
   starting_slots = list(map(lambda slot: slot.fst, filter(lambda slot: slot.start, slots)))
