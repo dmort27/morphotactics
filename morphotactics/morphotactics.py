@@ -21,7 +21,10 @@ def compile(slots):
     for (upper, lower, continuation_classes, weight) in slot.rules:
       # transitions within same slot could have different continuation classes
       # concatenate the rule with the continuation class' FST
-      rule = pynini.cross(upper, lower)
+
+      # place lower on the input alphabet
+      # so that FST can take in input from lower alphabet to perform analysis
+      rule = pynini.cross(lower, upper)
       # each transition could have many continuation_classes
       if len(continuation_classes) > 0:
         continuation_fsts = [slot_map[cont_class] for cont_class in continuation_classes]
