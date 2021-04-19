@@ -28,8 +28,10 @@ def compile(slots):
       slot.fst = pynini.union(slot.fst, pynini.concat(rule, continuation_union))
 
   # concatenate the FST with the starting classes
-  starting_slots = filter(lambda slot: slot.start, slots)
-  fst = pynini.concat(fst, starting_slots)
+  starting_slots = list(map(lambda slot: slot.fst, filter(lambda slot: slot.start, slots)))
+  if len(starting_slots) == 0:
+    raise Exception('need at least 1 slot to be a starting slot')
+  fst = pynini.concat(fst, pynini.union(*starting_slots))
 
   fst.optimize()
 
