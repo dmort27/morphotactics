@@ -97,4 +97,4 @@ class StemGuesser:
     if len(stack) > 0:
       raise Exception('Unmatched brackets')
 
-    return fst.optimize()
+    self.fst = fst.optimize()
