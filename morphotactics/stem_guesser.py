@@ -1,15 +1,24 @@
 import pynini
+from morphotactics.slot import Slot
 
-class StemGuesser:
+class StemGuesser(Slot):
   """
+  A StemGuesser is a special type of Slot that guesses stems
   Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
   Substitutes phoneme classes with symbols.
   Assumes long vowels have been expanded. 
   Args:
     min_word_constraint: a minimal word constraint expressed as a limited regular expression of phone classes
+    
+    (same as that of Slot)
+    name: name of the StemGuesser Slot
+    cont_classes: list of continuation classes
+        example: ['PluralSuffix']
+        The StemGuesser's destination state is a final state if continuation classes are empty
     alphabet (optional): dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
+    start (optional): the slot is one of root slots (root class in LEXC)
   """
-  def __init__(self, min_word_constraint, alphabet={}):
+  def __init__(self, min_word_constraint, name, cont_classes, alphabet={}, start=False):
     # phone classes could overlap so phones to set first
     symbols = {symb for symbol_class in alphabet.values() for symb in symbol_class}
 
@@ -97,4 +106,7 @@ class StemGuesser:
     if len(stack) > 0:
       raise Exception('Unmatched brackets')
 
+    # upper/lower alphabet symbol transitions and weights not used by compiler
+    rules = [('', '', cont_class, 0.0) for cont_class in cont_classes]
+    super(StemGuesser, self).__init__(name, rules, start)
     self.fst = fst.optimize()
