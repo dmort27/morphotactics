@@ -21,86 +21,104 @@ def is_bimoraic_sigma_form(oov_stem):
 
 
 def test_sigma_concatenated():
-  assert accepts(StemGuesser('...', nahuatl_alphabet).fst, 'tap')
-  assert not accepts(StemGuesser('...', nahuatl_alphabet).fst, '')
-  assert not accepts(StemGuesser('...', nahuatl_alphabet).fst, 'ta')
-  assert not accepts(StemGuesser('...', nahuatl_alphabet).fst, 'main')
+  fst = StemGuesser('...', nahuatl_alphabet).fst
+  assert accepts(fst, 'tap')
+  assert not accepts(fst, '')
+  assert not accepts(fst, 'ta')
+  assert not accepts(fst, 'main')
 
 def test_sigma_in_middle():
-  assert accepts(StemGuesser('p.p', nahuatl_alphabet).fst, 'pop')
-  assert accepts(StemGuesser('p.p', nahuatl_alphabet).fst, 'pip')
-  assert accepts(StemGuesser('p.p', nahuatl_alphabet).fst, 'psp')
-  assert not accepts(StemGuesser('p.p', nahuatl_alphabet).fst, 'pp')
+  fst = StemGuesser('p.p', nahuatl_alphabet).fst
+  assert accepts(fst, 'pop')
+  assert accepts(fst, 'pip')
+  assert accepts(fst, 'psp')
+  assert not accepts(fst, 'pp')
 
 def test_sigma_star_alone():
-  assert accepts(StemGuesser('.*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*', nahuatl_alphabet).fst, 'a')
-  assert accepts(StemGuesser('.*', nahuatl_alphabet).fst, 'ann')
-  assert accepts(StemGuesser('.*', nahuatl_alphabet).fst, 'nn')
+  fst = StemGuesser('.*', nahuatl_alphabet).fst
+  assert accepts(fst, '')
+  assert accepts(fst, 'a')
+  assert accepts(fst, 'ann')
+  assert accepts(fst, 'nn')
 
 def test_sigma_star_preceding():
-  assert accepts(StemGuesser('.*t', nahuatl_alphabet).fst, 't')
-  assert not accepts(StemGuesser('.*t', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*t', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*t', nahuatl_alphabet).fst, 'att')
-  assert not accepts(StemGuesser('.*t', nahuatl_alphabet).fst, 'ta')
+  fst = StemGuesser('.*t', nahuatl_alphabet).fst
+  assert accepts(fst, 't')
+  assert not accepts(fst, '')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'att')
+  assert not accepts(fst, 'ta')
 
 def test_sigma_star_following():
-  assert accepts(StemGuesser('t.*', nahuatl_alphabet).fst, 't')
-  assert not accepts(StemGuesser('t.*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('t.*', nahuatl_alphabet).fst, 'ta')
-  assert accepts(StemGuesser('t.*', nahuatl_alphabet).fst, 'tta')
-  assert not accepts(StemGuesser('t.*', nahuatl_alphabet).fst, 'at')
+  fst = StemGuesser('t.*', nahuatl_alphabet).fst
+  assert accepts(fst, 't')
+  assert not accepts(fst, '')
+  assert accepts(fst, 'ta')
+  assert accepts(fst, 'tta')
+  assert not accepts(fst, 'at')
 
 def test_sigma_star_odd_number():
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, 'a')
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, 't')
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*.*.*', nahuatl_alphabet).fst, 'atp')
+  fst = StemGuesser('.*.*.*', nahuatl_alphabet).fst
+  assert accepts(fst, 'at')
+  assert accepts(fst, '')
+  assert accepts(fst, 'a')
+  assert accepts(fst, 't')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'atp')
 
 def test_sigma_star_even_number():
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, 'a')
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, 't')
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*.*', nahuatl_alphabet).fst, 'atp')
+  fst = StemGuesser('.*.*', nahuatl_alphabet).fst
+  assert accepts(fst, 'at')
+  assert accepts(fst, '')
+  assert accepts(fst, 'a')
+  assert accepts(fst, 't')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'atp')
 
 def test_sigma_star_following_sigma():
-  assert not accepts(StemGuesser('..*', {'C': ['b', 'c'], 'V': ['a']}).fst, '')
-  assert accepts(StemGuesser('..*', nahuatl_alphabet).fst, 'a')
-  assert not accepts(StemGuesser('..*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('..*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('..*', nahuatl_alphabet).fst, 'atp')
+  fst = StemGuesser('..*', {'C': ['b', 'c'], 'V': ['a']}).fst
+  assert not accepts(fst, '')
+
+  fst = StemGuesser('..*', nahuatl_alphabet).fst
+  assert accepts(fst, 'a')
+  assert not accepts(fst, '')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'atp')
 
 def test_sigma_star_preceding_sigma():
-  assert accepts(StemGuesser('.*.', nahuatl_alphabet).fst, 'a')
-  assert not accepts(StemGuesser('.*.', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*.', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*.', nahuatl_alphabet).fst, 'atp')
+  fst = StemGuesser('.*.', nahuatl_alphabet).fst
+  assert accepts(fst, 'a')
+  assert not accepts(fst, '')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'atp')
 
 def test_sigma_star_sigma_sigma_star():
-  assert accepts(StemGuesser('.*..*', nahuatl_alphabet).fst, 'a')
-  assert not accepts(StemGuesser('.*..*', nahuatl_alphabet).fst, '')
-  assert accepts(StemGuesser('.*..*', nahuatl_alphabet).fst, 'at')
-  assert accepts(StemGuesser('.*..*', nahuatl_alphabet).fst, 'atp')
+  fst = StemGuesser('.*..*', nahuatl_alphabet).fst
+  assert accepts(fst, 'a')
+  assert not accepts(fst, '')
+  assert accepts(fst, 'at')
+  assert accepts(fst, 'atp')
 
 def test_sigma_star_symbol_sigma_star():
-  assert not accepts(StemGuesser('.*j.*', nahuatl_alphabet).fst, '')
-  assert not accepts(StemGuesser('.*j.*', nahuatl_alphabet).fst, 'a')
-  assert accepts(StemGuesser('.*j.*', nahuatl_alphabet).fst, 'j')
-  assert not accepts(StemGuesser('[CV]*[CV][CV]*', nahuatl_alphabet).fst, '')
-  assert not accepts(StemGuesser('.*..*', nahuatl_alphabet).fst, '')
+  fst = StemGuesser('.*j.*', nahuatl_alphabet).fst
+  assert not accepts(fst, '')
+  assert not accepts(fst, 'a')
+  assert accepts(fst, 'j')
+
+  fst = StemGuesser('[CV]*[CV][CV]*', nahuatl_alphabet).fst
+  assert not accepts(fst, '')
+
+  fst = StemGuesser('.*..*', nahuatl_alphabet).fst
+  assert not accepts(fst, '')
 
 def test_symbol_closure():
-  assert accepts(StemGuesser('a*').fst, '')
-  assert accepts(StemGuesser('a*').fst, 'a')
-  assert accepts(StemGuesser('a*').fst, 'aa')
-  assert accepts(StemGuesser('a*').fst, 'aaa')
-  assert accepts(StemGuesser('a*').fst, 'aaaa')
-  assert not accepts(StemGuesser('a*').fst, 'ab')
+  fst = StemGuesser('a*').fst
+  assert accepts(fst, '')
+  assert accepts(fst, 'a')
+  assert accepts(fst, 'aa')
+  assert accepts(fst, 'aaa')
+  assert accepts(fst, 'aaaa')
+  assert not accepts(fst, 'ab')
 
 def test_bimoraic_fsa():
   assert is_bimoraic('paaki') # CVVCV
@@ -150,52 +168,66 @@ def test_bimoraic_fsa_sigma_form():
   assert not is_bimoraic_sigma_form('pa') # CV
 
 def test_closure_no_alphabet():
-  assert accepts(StemGuesser('CV*').fst, 'C')
-  assert accepts(StemGuesser('CV*').fst, 'CV')
-  assert accepts(StemGuesser('CV*').fst, 'CVV')
-  assert accepts(StemGuesser('CV*').fst, 'CVVV')
-  assert not accepts(StemGuesser('CV*').fst, 'CVC')
+  fst = StemGuesser('CV*').fst
+  assert accepts(fst, 'C')
+  assert accepts(fst, 'CV')
+  assert accepts(fst, 'CVV')
+  assert accepts(fst, 'CVVV')
+  assert not accepts(fst, 'CVC')
 
 def test_closure_of_scope_no_alphabet():
-  assert accepts(StemGuesser('(CV)*').fst, '')
-  assert accepts(StemGuesser('(CV)*').fst, 'CV')
-  assert accepts(StemGuesser('(CV)*').fst, 'CVCV')
-  assert not accepts(StemGuesser('(CV)*').fst, 'CVV')
-  assert not accepts(StemGuesser('(CV)*').fst, 'CCV')
+  fst = StemGuesser('(CV)*').fst
+  assert accepts(fst, '')
+  assert accepts(fst, 'CV')
+  assert accepts(fst, 'CVCV')
+  assert not accepts(fst, 'CVV')
+  assert not accepts(fst, 'CCV')
 
 def test_closure_of_union_no_alphabet():
-  assert accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CVVCV') # bimoraic
-  assert accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'VV') # bimoraic
-  assert accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'VVC') # bimoraic
-  assert accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CVCV') # bimoraic
-  assert accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CVCVC') # bimoraic
-  assert not accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CV') # not bimoraic
-  assert not accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CC') # not bimoraic
-  assert not accepts(StemGuesser('[CV]*V[CV]*V[CV]*').fst, 'CCV') # not bimoraic
+  fst = StemGuesser('[CV]*V[CV]*V[CV]*').fst
+  assert accepts(fst, 'CVVCV') # bimoraic
+  assert accepts(fst, 'VV') # bimoraic
+  assert accepts(fst, 'VVC') # bimoraic
+  assert accepts(fst, 'CVCV') # bimoraic
+  assert accepts(fst, 'CVCVC') # bimoraic
+  assert not accepts(fst, 'CV') # not bimoraic
+  assert not accepts(fst, 'CC') # not bimoraic
+  assert not accepts(fst, 'CCV') # not bimoraic
 
 def test_closure_of_scope_preceding_symbol():
-  assert not accepts(StemGuesser('(CV)*C').fst, 'CCV')
-  assert accepts(StemGuesser('(CV)*C').fst, 'CVC')
-  assert accepts(StemGuesser('(CV)*C').fst, 'CVCVC')
-  assert accepts(StemGuesser('(CV)*C').fst, 'C')
-  assert not accepts(StemGuesser('(CV)*C').fst, '')
+  fst = StemGuesser('(CV)*C').fst
+  assert not accepts(fst, 'CCV')
+  assert accepts(fst, 'CVC')
+  assert accepts(fst, 'CVCVC')
+  assert accepts(fst, 'C')
+  assert not accepts(fst, '')
 
 def test_concat():
-  assert accepts(StemGuesser('CVCV').fst, 'CVCV')
-  assert not accepts(StemGuesser('CVCV').fst, 'CVC')
-  assert not accepts(StemGuesser('CVCV').fst, 'CVV')
+  fst = StemGuesser('CVCV').fst
+  assert accepts(fst, 'CVCV')
+  assert not accepts(fst, 'CVC')
+  assert not accepts(fst, 'CVV')
 
 def test_union_concat_union():
-  assert not accepts(StemGuesser('[abc][abc]').fst, 'abcabc')
-  assert accepts(StemGuesser('[abc][abc]').fst, 'ab')
+  fst = StemGuesser('[abc][abc]').fst
+  assert not accepts(fst, 'abcabc')
+  assert accepts(fst, 'ab')
 
 def test_scope_concat_scope():
-  assert accepts(StemGuesser('(abc)(abc)').fst, 'abcabc')
-  assert not accepts(StemGuesser('(abc)(abc)').fst, 'ab')
-  assert accepts(StemGuesser('(abef)').fst, 'abef')
+  fst = StemGuesser('(abc)(abc)').fst
+  assert accepts(fst, 'abcabc')
+  assert not accepts(fst, 'ab')
+
+  fst = StemGuesser('(abef)').fst
+  assert accepts(fst, 'abef')
 
 def test_union_concat_scope():
-  assert accepts(StemGuesser('[abc](de)').fst, 'cde')
-  assert accepts(StemGuesser('[abc](de)[fgh]').fst, 'cdef')
-  assert accepts(StemGuesser('[abc](de)[fgh]').fst, 'adeg')
-  assert accepts(StemGuesser('[abc](ce)[fgh]').fst, 'acef')
+  fst = StemGuesser('[abc](de)').fst
+  assert accepts(fst, 'cde')
+
+  fst = StemGuesser('[abc](de)[fgh]').fst
+  assert accepts(fst, 'cdef')
+  assert accepts(fst, 'adeg')
+
+  fst = StemGuesser('[abc](ce)[fgh]').fst
+  assert accepts(fst, 'acef')
