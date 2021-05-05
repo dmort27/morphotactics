@@ -7,6 +7,7 @@ class StemGuesser(Slot):
   Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
   Substitutes phoneme classes with symbols.
   Assumes long vowels have been expanded. 
+  Unlike Slot, a StemGuesser's FST is eagerly evaluated
   Args:
     min_word_constraint: a minimal word constraint expressed as a limited regular expression of phone classes
     
@@ -107,6 +108,6 @@ class StemGuesser(Slot):
       raise Exception('Unmatched brackets')
 
     # upper/lower alphabet symbol transitions and weights not used by compiler
-    rules = [('', '', cont_class, 0.0) for cont_class in cont_classes]
+    rules = [('', '', cont_classes, 0.0)]
     super(StemGuesser, self).__init__(name, rules, start)
     self.fst = fst.optimize()

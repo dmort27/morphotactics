@@ -1,4 +1,5 @@
 import pynini
+from morphotactics.stem_guesser import StemGuesser
 
 # A recursive, polymorphic depth-first graph search algorithm
 # Runs in O(|V| + |E|) if the state updates are O(1)
@@ -51,7 +52,7 @@ def compile(slots):
   def finish(state, vertex):
     processed_slots = state
     
-    if vertex == 'start': # finish the final state
+    if vertex == 'start': # the starting state is the last to be processed
       # union the starting classes
       starting_slot_fsts = [processed_slots[slot] for slot in starting_slots.keys()]
       final_fst = pynini.union(*starting_slot_fsts)
@@ -61,19 +62,29 @@ def compile(slots):
     # add current slot's FST to finished set of slots
     slot = slot_map[vertex]
     processed_slots[vertex] = slot.fst
-    # go through each rule and take union of continuations, concatenate
-    for (upper, lower, cont_classes, weight) in slot.rules:
-      # transitions within same slot could have different continuation classes
-      # concatenate the rule with the continuation class' FST
 
-      # place lower on the input side so that FST can take in input from lower alphabet to perform analysis
-      rule = pynini.cross(lower, upper)
-      # assumes by the time a continuation class is finished, its neighbors are finished too
+    if isinstance(slot, StemGuesser):
+      # only care about a StemGuesser's continuation classes
+      # StemGuesser does not assign weights or transitions
+      cont_classes = slot.rules[0][2]
+
       if len(cont_classes) > 0:
         union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
-        slot.fst.union(pynini.concat(rule, union_continuations))
-      else:
-        slot.fst.union(rule)
+        slot.fst.union(union_continuations)
+    else: # regular Slot
+      # go through each rule and take union of continuations, concatenate
+      for (upper, lower, cont_classes, weight) in slot.rules:
+        # transitions within same slot could have different continuation classes
+        # concatenate the rule with the continuation class' FST
+
+        # place lower on the input side so that FST can take in input from lower alphabet to perform analysis
+        rule = pynini.cross(lower, upper)
+        # assumes by the time a continuation class is finished, its neighbors are finished too
+        if len(cont_classes) > 0:
+          union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
+          slot.fst.union(pynini.concat(rule, union_continuations))
+        else:
+          slot.fst.union(rule)
     return processed_slots
 
   def neighbors(vertex):
@@ -83,6 +94,7 @@ def compile(slots):
     # we only care about visiting the continuation class so only retrieve its name
     # the linking of rules to continuation class' FSTs is done in the finish function
     slot = slot_map[vertex]
+    # works if the slot is a Slot or StemGuesser
     for (_, _, continuation_classes, _) in slot.rules:
       conts |= set(continuation_classes)
     return list(conts)
