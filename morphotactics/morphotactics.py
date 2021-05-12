@@ -70,7 +70,7 @@ def compile(slots):
 
       if len(cont_classes) > 0:
         union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
-        slot.fst.union(union_continuations)
+        slot.fst.concat(union_continuations) # FST already initialized
     else: # regular Slot
       # go through each rule and take union of continuations, concatenate
       for (upper, lower, cont_classes, weight) in slot.rules:

@@ -1,5 +1,6 @@
 from morphotactics.morphotactics import compile
 from morphotactics.slot import Slot
+from morphotactics.stem_guesser import StemGuesser
 import pytest
 import pynini
 
@@ -269,3 +270,161 @@ def test_multiple_rules_multiple_classes_multiple_continuations():
   # class4
   assert analyze(fst, 'r') == 'q'
   assert analyze(fst, 't') == 's'
+
+def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesser_starting():
+  nahuatl_alphabet = {
+    'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
+    'V': ['a', 'e', 'i', 'o']
+  }
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', ['class2', 'class3'], 
+    alphabet=nahuatl_alphabet, start=True)
+  
+  fst = compile({
+    bimoraic_fsa,
+    Slot('class2', 
+      [
+        ('g', 'h', [], 0.0),
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', [], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+  
+  # non-bimoraic stem rejected
+  with pytest.raises(Exception):
+    analyze(fst, 'pak' + 'h')
+
+  # paki = fictitious verb stem
+  # valid verb stem by itself not accepted
+  with pytest.raises(Exception):
+    analyze(fst, 'paaki')
+  
+  # class2 and class3
+  for upper, lower in [('g', 'h'), ('i', 'j'), ('m', 'n'), ('o', 'p')]:
+    assert analyze(fst, 'paaki' + lower) == 'paaki' + upper
+
+  # class2 then class3
+  for upper, lower in [('m', 'n'), ('o', 'p')]:
+    assert analyze(fst, 'paakil' + lower) == 'paakik' + upper
+
+  # the other starting class (class4) accepted
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesser_in_middle():
+  nahuatl_alphabet = {
+    'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
+    'V': ['a', 'e', 'i', 'o']
+  }
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', ['class3'], 
+    alphabet=nahuatl_alphabet)
+
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['VerbStem'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['VerbStem', 'class3'], 0.0)
+      ],
+      start=True),
+    bimoraic_fsa,
+    Slot('class3', 
+      [
+        ('m', 'n', [], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+  
+  # non-bimoraic stem (with valid prefix) rejected
+  with pytest.raises(Exception):
+    analyze(fst, 'b' + 'pak')
+  
+  # paki = fictitious verb stem
+  # valid verb stem by itself not accepted
+  with pytest.raises(Exception):
+    analyze(fst, 'paaki')
+  
+  # class1 alone
+  assert analyze(fst, 'd') == 'c'
+
+  # class1 then VerbStem then class3
+  assert analyze(fst, 'b' + 'paaki' + 'n') == 'a' + 'paaki' + 'm'
+  assert analyze(fst, 'b' + 'paaki' + 'p') == 'a' + 'paaki' + 'o'
+  assert analyze(fst, 'f' + 'paaki' + 'n') == 'e' + 'paaki' + 'm'
+  assert analyze(fst, 'f' + 'paaki' + 'p') == 'e' + 'paaki' + 'o'
+
+  # class1 then class3
+  assert analyze(fst, 'fn') == 'em'
+  assert analyze(fst, 'fp') == 'eo'
+  
+  # the other starting class (class4) accepted
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesser_ending():
+  nahuatl_alphabet = {
+    'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
+    'V': ['a', 'e', 'i', 'o']
+  }
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [], 
+    alphabet=nahuatl_alphabet)
+
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 0.0),
+        ('c', 'd', ['VerbStem'], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('m', 'n', ['VerbStem'], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', ['VerbStem'], 0.0),
+      ]),
+    bimoraic_fsa
+  })
+
+  # non-bimoraic stem (with valid prefix) rejected
+  with pytest.raises(Exception):
+    analyze(fst, 'd' + 'pak')
+
+  # class1 to VerbStem
+  assert analyze(fst, 'dpaki') == 'cpaki'
+
+  # class1 to class2
+  assert analyze(fst, 'bp') == 'ao'
+  assert analyze(fst, 'fp') == 'eo'
+
+  # class1 to class3
+  assert analyze(fst, 'fr') == 'eq'
+
+  # class1 to class2 to VerbStem
+  assert analyze(fst, 'bn' + 'paki') == 'am' + 'paki'
+  assert analyze(fst, 'fn' + 'paki') == 'em' + 'paki'
+
+  # class1 to class3 to VerbStem
+  assert analyze(fst, 'ft' + 'paki') == 'es' + 'paki'
