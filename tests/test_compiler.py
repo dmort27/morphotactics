@@ -248,7 +248,7 @@ def test_multiple_rules_multiple_classes_multiple_continuations():
   })
   
   # class1 alone
-  assert analyze(fst, 'b') == 'a'
+  assert analyze(fst, 'd') == 'c'
 
   # class1 to class2
   assert analyze(fst, 'bh') == 'ag'
