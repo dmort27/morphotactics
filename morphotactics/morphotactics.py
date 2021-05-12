@@ -61,7 +61,6 @@ def compile(slots):
 
     # add current slot's FST to finished set of slots
     slot = slot_map[vertex]
-    processed_slots[vertex] = slot.fst
 
     if isinstance(slot, StemGuesser):
       # only care about a StemGuesser's continuation classes
@@ -82,9 +81,17 @@ def compile(slots):
         # assumes by the time a continuation class is finished, its neighbors are finished too
         if len(cont_classes) > 0:
           union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
-          slot.fst.union(pynini.concat(rule, union_continuations))
+          if not slot.fst: # FST not initialized yet
+            slot.fst = pynini.concat(rule, union_continuations)
+          else:
+            slot.fst.union(pynini.concat(rule, union_continuations))
         else:
-          slot.fst.union(rule)
+          if not slot.fst: # FST not initialized yet
+            slot.fst = rule
+          else:
+            slot.fst.union(rule)
+
+    processed_slots[vertex] = slot.fst
     return processed_slots
 
   def neighbors(vertex):

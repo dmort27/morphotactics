@@ -11,15 +11,11 @@ class Slot:
     rules: a list of tuples (upper alphabet symbols, lower alphabet symbols, list of continuation classes, weight)
         example: ('ni-', 'ni', ['RefObj', 'VerbStem'], 0.0)
         a rule's destination state is a final state if continuation classes are empty
-    start: the slot is one of root slots (root class in LEXC)
+        the weight is the weight of the transition from the slot's initial state to this particular rule
+    start (optional): the slot is one of the starting slots (root class in LEXC)
   """
   def __init__(self, name, rules, start=False):
     self.name = name
-    # empty FST
-    fst = pynini.Fst()
-    s = fst.add_state()
-    fst.set_start(s)
-    fst.set_final(s)
-    self.fst = fst
+    self.fst = None
     self.rules = rules # list of rules and their continuation classes
     self.start = start
