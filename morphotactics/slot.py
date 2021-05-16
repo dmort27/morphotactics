@@ -19,3 +19,4 @@ class Slot:
     self.fst = None
     self.rules = rules # list of rules and their continuation classes
     self.start = start
+    self.final_states = []

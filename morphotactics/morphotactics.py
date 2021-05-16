@@ -32,67 +32,88 @@ Args:
   slots: set of Slot objects (not a list)
 """
 def compile(slots):
-  # we use DFS to process the dependencies from finishing classes to starting classes
-  # because we can only join a rule to a continuation class when the continuation class is finished processing
-  # this is essentially finding a topological sort of a DAG
-  # though we do not return the actual sort and only go in reverse topological sorted order
-  # continuation classes are the vertices, and transitions between classes are edges
+  # if dependencies are cyclic, we cannot use pynini to concatenate
+  # rules to continuation classes' FSTs since pynini creates a copy of the 
+  # continuation class' FST, and we might not have finished mutating it
+  # by the time we are doing the concatenation
+  # thus we must manually add the arcs from the rules to the continuation classes
+  # through 2 passes (1 pass to create the rules, 1 pass to add the arcs)
+  
+  # we use DFS to process the Slots that are reachable from the starting Slots
+  # Slots are the vertices, and transitions between classes are edges
 
   slot_map = { slot.name:slot for slot in slots }
   starting_slots = { slot.name:slot for slot in slots if slot.start }
+  fst = pynini.Fst()
 
   if len(starting_slots) == 0:
     raise Exception('need at least 1 slot to be a starting slot')
 
-  def visit(state, vertex): # do nothing
-    return state
-  def revisit(state, vertex): 
-    # do nothing because graph is a DAG and this function will never be reached
-    return state
-  def finish(state, vertex):
-    processed_slots = state
-    
-    if vertex == 'start': # the starting state is the last to be processed
-      # union the starting classes
-      starting_slot_fsts = [processed_slots[slot] for slot in starting_slots.keys()]
-      final_fst = pynini.union(*starting_slot_fsts)
-      processed_slots['start'] = final_fst
-      return processed_slots
+  # copy the FST for each rule or the Slot's FSA into the main fst with pywrapfst
+  # store each Slot's start state in this main FST as DFS state
+  # store each rule's/FSA's final state in the Slot
+  def first_visit(state, vertex):
+    start_states = state
 
-    # add current slot's FST to finished set of slots
+    if vertex == 'start':
+      s = fst.add_state()
+      fst.set_start(s)
+      start_states[vertex] = s
+      return start_states
+    
     slot = slot_map[vertex]
+    slot_start_state = fst.add_state()
 
     if isinstance(slot, StemGuesser):
-      # only care about a StemGuesser's continuation classes
-      # StemGuesser does not assign weights or transitions
-      cont_classes = slot.rules[0][2]
+      # copy the regex FSA to fst with pywrapfst
+      fsa = slot.fst
+      old_num_states = fst.num_states()
+      fst.add_states(fsa.num_states() - 1) # do not need to copy over slot_start_state again
+      for state in fsa.states():
+        new_state = slot_start_state if state == 0 else (old_num_states + state - 1)
 
-      if len(cont_classes) > 0:
-        union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
-        slot.fst.concat(union_continuations) # FST already initialized
+        # final state of FST may not be accepting, so must manually find the final state
+        # there will only be one final state in fsa since it was optimized
+        if fsa.final(state) == pynini.Weight.one('tropical'):
+          fsa_final_state = new_state
+
+        for arc in fsa.arcs(state):
+          nextstate = slot_start_state if arc.nextstate == 0 else (old_num_states + arc.nextstate - 1)
+          fst.add_arc(new_state, pynini.Arc(arc.ilabel, arc.olabel, arc.weight, nextstate))
+
+      slot.final_states.append(fsa_final_state)
     else: # regular Slot
-      # go through each rule and take union of continuations, concatenate
+      # create an FST for each rule with pynini and copy over to fst with pywrapfst
       for (upper, lower, cont_classes, weight) in slot.rules:
         # transitions within same slot could have different continuation classes
-        # concatenate the rule with the continuation class' FST
+        # we will concatenate the rule with the continuation class' FST in the second DFS
 
         # place lower on the input side so that FST can take in input from lower alphabet to perform analysis
         rule = pynini.cross(lower, upper)
-        # assumes by the time a continuation class is finished, its neighbors are finished too
-        if len(cont_classes) > 0:
-          union_continuations = pynini.union(*[processed_slots[c] for c in cont_classes])
-          if not slot.fst: # FST not initialized yet
-            slot.fst = pynini.concat(rule, union_continuations)
-          else:
-            slot.fst.union(pynini.concat(rule, union_continuations))
-        else:
-          if not slot.fst: # FST not initialized yet
-            slot.fst = rule
-          else:
-            slot.fst.union(rule)
 
-    processed_slots[vertex] = slot.fst
-    return processed_slots
+        # copy rule to fst arc by arc, starting from state start_slot
+        old_num_states = fst.num_states()
+        fst.add_states(rule.num_states() - 1) # do not need to copy over slot_start_state again
+        
+        for state in rule.states():
+          new_state = slot_start_state if state == 0 else (old_num_states + state - 1)
+          for arc in rule.arcs(state):
+            nextstate = slot_start_state if arc.nextstate == 0 else (old_num_states + arc.nextstate - 1)
+            fst.add_arc(new_state, pynini.Arc(arc.ilabel, arc.olabel, arc.weight, nextstate))
+
+        rule_final_state = fst.num_states() - 1
+        slot.final_states.append(rule_final_state)
+        
+    # add current slot's FST to finished set of slots
+    start_states[vertex] = slot_start_state
+    return start_states
+  
+  def revisit(state, vertex): 
+    # do nothing because Slot only needs to be processed once
+    return state
+  
+  def finish(state, vertex): # do nothing
+    return state
 
   def neighbors(vertex):
     if vertex == 'start':
@@ -106,14 +127,65 @@ def compile(slots):
       conts |= set(continuation_classes)
     return list(conts)
   
-  processed_slots = {} # maps Slot name to Slot FST
-  visited = set()
-  (processed_slots, _) = _dfs(processed_slots, set(), 'start', neighbors, visit, revisit, finish)
-  final_fst = processed_slots['start']
-  final_fst.optimize()
+  # make a first pass through all of the Slots with DFS
+  # convert each Slot's rules into an FST
+  # DFS guarantees that the Slots processed are reachable from the start
+
+  # start_states maps Slot name to start state of the Slot so that we can concatenate a rule with its continuation classes
+  start_states = {}
+  (start_states, _) = _dfs(start_states, set(), 'start', neighbors, first_visit, revisit, finish)
+
+  # second pass through all of the Slots
+  # by this time, all Slots reachable from the start have been converted into FSTs
+  # add transition from each rule to continuation class' start state
+  # glue all Slots together, Slot by Slot
+  # note that we cannot concatenate each Slot to its continuation's FST 
+  #    because its continuation's FST is not guaranteed to have finished processing
+  def second_pass(state, vertex):
+    if vertex == 'start':
+      # add an epsilon transition between each starting state and starting slots
+      # will be removed during optimization
+      # we do not union the starting slots because we do not know when the slots will be finished processing
+      s = start_states[vertex]
+      for start_slot in starting_slots.keys():
+        # note: we currently do not support setting weights for starting classes
+        arc = pynini.Arc(0, 0, 0.0, start_states[start_slot])
+        fst.add_arc(s, arc)
+      return
+    
+    slot = slot_map[vertex]
+    if isinstance(slot, StemGuesser):
+      # only care about a StemGuesser's continuation classes
+      # StemGuesser does not assign weights or transitions
+      cont_classes = slot.rules[0][2]
+      final_state = slot.final_states[0] # Slot only has 1 final state
+      if len(cont_classes) == 0:
+        # final state of the rule should be an accepting state
+        fst.set_final(final_state)
+      else:
+        # add epsilon transition between FSA's final state and continuation classes
+        for continuation_class in cont_classes:
+          arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
+          fst.add_arc(final_state, arc)
+    else: # regular Slot
+      for ((_, _, cont_classes, _), final_state) in zip(slot.rules, slot.final_states):
+        if len(cont_classes) == 0:
+          # final state of the rule should be an accepting state
+          fst.set_final(final_state)
+        else:
+          # add epsilon transition between each rule's final state and continuation classes
+          # note: we currently do not support setting weights for continuation classes
+          for continuation_class in cont_classes:
+            arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
+            fst.add_arc(final_state, arc)
+    return
+  
+  _dfs(None, set(), 'start', neighbors, second_pass, revisit, finish)
 
   # verify the FST
-  if not final_fst.verify():
+  if not fst.verify():
     raise Exception('FST malformed')
 
-  return final_fst
+  fst.optimize()
+
+  return fst
