@@ -26,7 +26,7 @@ def test_single_starting_class_no_continuation():
 
   # FST does not do morphological generation (FST rejects upper alphabet symbols)
   with pytest.raises(Exception):
-    analyzed(fst, 'a')
+    analyze(fst, 'a')
 
 def test_single_starting_class_single_continuation():
   fst = compile({
@@ -46,9 +46,9 @@ def test_single_starting_class_multiple_continuations():
 
   # must start with the starting class
   with pytest.raises(Exception):
-    analyzed(fst, 'd')
+    analyze(fst, 'd')
   with pytest.raises(Exception):
-    analyzed(fst, 'f')
+    analyze(fst, 'f')
 
 def test_single_starting_class_multiple_classes():
   fst = compile({
@@ -61,11 +61,11 @@ def test_single_starting_class_multiple_classes():
   
   # must start with the starting class
   with pytest.raises(Exception):
-    analyzed(fst, 'd')
+    analyze(fst, 'd')
   with pytest.raises(Exception):
-    analyzed(fst, 'f')
+    analyze(fst, 'f')
   with pytest.raises(Exception):
-    analyzed(fst, 'h')
+    analyze(fst, 'h')
 
 def test_multiple_starting_classes_no_continuation():
   fst = compile({
@@ -78,9 +78,9 @@ def test_multiple_starting_classes_no_continuation():
 
   # starting classes do not connect
   with pytest.raises(Exception):
-    analyzed(fst, 'bd')
+    analyze(fst, 'bd')
   with pytest.raises(Exception):
-    analyzed(fst, 'db')
+    analyze(fst, 'db')
 
 def test_multiple_starting_classes_same_continuation():
   fst = compile({
@@ -93,13 +93,13 @@ def test_multiple_starting_classes_same_continuation():
 
   # not a starting class
   with pytest.raises(Exception):
-    analyzed(fst, 'f')
+    analyze(fst, 'f')
 
   # starting classes do not connect
   with pytest.raises(Exception):
-    analyzed(fst, 'bd')
+    analyze(fst, 'bd')
   with pytest.raises(Exception):
-    analyzed(fst, 'db')
+    analyze(fst, 'db')
 
 def test_multiple_starting_classes_some_have_continuation_others_do_not():
   fst = compile({
@@ -112,11 +112,11 @@ def test_multiple_starting_classes_some_have_continuation_others_do_not():
 
   # class2 has no transitions
   with pytest.raises(Exception):
-    analyzed(fst, 'df')
+    analyze(fst, 'df')
 
   # not a starting class
   with pytest.raises(Exception):
-    analyzed(fst, 'f')
+    analyze(fst, 'f')
 
 def test_multiple_starting_classes_different_continuation():
   fst = compile({
@@ -130,16 +130,16 @@ def test_multiple_starting_classes_different_continuation():
 
   # class1 should not transition to class4
   with pytest.raises(Exception):
-    analyzed(fst, 'bh')
+    analyze(fst, 'bh')
   # class2 should not transition to class3
   with pytest.raises(Exception):
-    analyzed(fst, 'df')
+    analyze(fst, 'df')
 
   # must start with a starting class
   with pytest.raises(Exception):
-    analyzed(fst, 'f')
+    analyze(fst, 'f')
   with pytest.raises(Exception):
-    analyzed(fst, 'h')
+    analyze(fst, 'h')
 
 def test_multiple_starting_classes_single_rule_per_class_multiple_continuations():
   fst = compile({
@@ -156,16 +156,16 @@ def test_multiple_starting_classes_single_rule_per_class_multiple_continuations(
 
   # multiple continuation classes do not interfere with each other
   with pytest.raises(Exception):
-    analyzed(fst, 'bfh') # class3 not joined with class4
+    analyze(fst, 'bfh') # class3 not joined with class4
   with pytest.raises(Exception):
-    analyzed(fst, 'bdf') # class2 not joined with class3
+    analyze(fst, 'bdf') # class2 not joined with class3
   with pytest.raises(Exception):
-    analyzed(fst, 'bdh') # class2 not joined with class4
+    analyze(fst, 'bdh') # class2 not joined with class4
 
   # must start with a starting class
   for non_starting_class_symbol in ['b', 'd', 'f']:
     with pytest.raises(Exception):
-      analyzed(fst, non_starting_class_symbol)
+      analyze(fst, non_starting_class_symbol)
 
 def test_multiple_rules_single_class_no_continuations():
   fst = compile({
@@ -187,12 +187,12 @@ def test_multiple_rules_single_class_no_continuations():
   # FST does not accept upper alphabet symbols
   for input_symbol in ['a', 'c', 'e', 'g']:
     with pytest.raises(Exception):
-      analyzed(fst, input_symbol)
+      analyze(fst, input_symbol)
 
   # a slot is a union of rules, not a concatenation
   for not_in_lang in ['bd', 'df', 'fh', 'bh', 'dh', 'bf']:
     with pytest.raises(Exception):
-      analyzed(fst, not_in_lang)
+      analyze(fst, not_in_lang)
 
 def test_multiple_rules_single_starting_class_with_multiple_continuations():
   fst = compile({
@@ -217,7 +217,7 @@ def test_multiple_rules_single_starting_class_with_multiple_continuations():
   # rules within a slot should not be concatenated with wrong continuation class
   for not_in_lang in ['bf', 'bh', 'bd', 'bn', 'df', 'dh', 'db', 'dj', 'dl']:
     with pytest.raises(Exception):
-      analyzed(fst, not_in_lang)
+      analyze(fst, not_in_lang)
 
 def test_multiple_rules_multiple_classes_multiple_continuations():
   fst = compile({
