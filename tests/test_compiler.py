@@ -428,3 +428,358 @@ def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesse
 
   # class1 to class3 to VerbStem
   assert analyze(fst, 'ft' + 'paki') == 'es' + 'paki'
+
+def test_single_cyclic_class():
+  # starting class connects to itself
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class1'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', [], 0.0)
+      ],
+      start=True),
+  })
+
+  # need another transition to reach accepting state
+  with pytest.raises(Exception):
+    assert analyze(fst, 'b')
+
+  # repeat transitions
+  for i in range(1, 5):
+    assert analyze(fst, ('b' * i) + 'd') == ('a' * i) + 'c'
+    assert analyze(fst, ('b' * i) + 'f') == ('a' * i) + 'e'
+
+  # not all transitions repeat
+  assert analyze(fst, 'd') == 'c'
+  assert analyze(fst, 'f') == 'e'
+
+  for repeat in (['d' * i for i in range(2, 6)] + ['f' * i for i in range(2, 6)]):
+    with pytest.raises(Exception):
+      assert analyze(fst, repeat)
+    with pytest.raises(Exception):
+      assert analyze(fst, 'b' + repeat)
+    with pytest.raises(Exception):
+      assert analyze(fst, 'bb' + repeat)
+    with pytest.raises(Exception):
+      assert analyze(fst, 'bbb' + repeat)
+
+def test_cyclic_class_starting():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class1'], 0.0), # the cyclic rule
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', [], 0.0),
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', [], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+  
+  # cyclic class' non-cyclic (and terminal) rule
+  assert analyze(fst, 'd') == 'c'
+
+  # need another transition to reach accepting state
+  with pytest.raises(Exception):
+    assert analyze(fst, 'b')
+
+  # repeat applications of the cyclic rule
+  for i in range(1, 5):
+    assert analyze(fst, ('b' * i) + 'd') == ('a' * i) + 'c'
+
+  for i in range(0, 5): # i = 0 means no b's prepended
+    prepend_input = 'b' * i
+    prepend_output = 'a' * i
+    
+    # class1 to class2
+    assert analyze(fst, prepend_input + 'fh') == prepend_output + 'eg'
+    assert analyze(fst, prepend_input + 'fj') == prepend_output + 'ei'
+
+    # class1 to class2 to class3
+    assert analyze(fst, prepend_input + 'fln') == prepend_output + 'ekm'
+    assert analyze(fst, prepend_input + 'flp') == prepend_output + 'eko'
+
+    # class1 to class3
+    assert analyze(fst, prepend_input + 'fn') == prepend_output + 'em'
+    assert analyze(fst, prepend_input + 'fp') == prepend_output + 'eo'
+
+    # cannot get to class4 from class1
+    if i > 0:
+      with pytest.raises(Exception):
+        assert analyze(fst, prepend_input + 'r') == prepend_output + 'q'
+      with pytest.raises(Exception):
+        assert analyze(fst, prepend_input + 't') == prepend_output + 's'
+  
+  # class4
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+def test_cyclic_class_in_middle():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', ['class2'], 0.0), # cyclic rule
+        ('G', 'H', ['class2'], 0.0), # cyclic rule
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', [], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+
+  # class1 alone
+  assert analyze(fst, 'd') == 'c'
+
+  # class1 to class2, non-cyclic and terminal
+  assert analyze(fst, 'bj') == 'ai'
+  assert analyze(fst, 'fj') == 'ei'
+
+  # class1 to class2, cyclic
+  # need another transition to reach accepting state
+  with pytest.raises(Exception):
+    assert analyze(fst, 'bh')
+  with pytest.raises(Exception):
+    assert analyze(fst, 'bH')
+  with pytest.raises(Exception):
+    assert analyze(fst, 'fH')
+  with pytest.raises(Exception):
+    assert analyze(fst, 'fH')
+  for i in range(1, 5):
+    assert analyze(fst, 'b' + ('h' * i) + 'j') == 'a' + ('g' * i) + 'i'
+    assert analyze(fst, 'b' + ('H' * i) + 'j') == 'a' + ('G' * i) + 'i'
+    assert analyze(fst, 'f' + ('h' * i) + 'j') == 'e' + ('g' * i) + 'i'
+    assert analyze(fst, 'f' + ('H' * i) + 'j') == 'e' + ('G' * i) + 'i'
+
+  # class1 to class2 (non-cyclic) to class3
+  assert analyze(fst, 'bln') == 'akm'
+  assert analyze(fst, 'blp') == 'ako'
+  assert analyze(fst, 'fln') == 'ekm'
+  assert analyze(fst, 'flp') == 'eko'
+
+  # class1 to class2 (cyclic) to class3
+  for i in range(1, 5):
+    assert analyze(fst, 'b' + ('h' * i) + 'ln') == 'a' + ('g' * i) + 'km'
+    assert analyze(fst, 'b' + ('h' * i) + 'lp') == 'a' + ('g' * i) + 'ko'
+    assert analyze(fst, 'b' + ('H' * i) + 'ln') == 'a' + ('G' * i) + 'km'
+    assert analyze(fst, 'b' + ('H' * i) + 'lp') == 'a' + ('G' * i) + 'ko'
+    assert analyze(fst, 'f' + ('h' * i) + 'ln') == 'e' + ('g' * i) + 'km'
+    assert analyze(fst, 'f' + ('h' * i) + 'lp') == 'e' + ('g' * i) + 'ko'
+    assert analyze(fst, 'f' + ('H' * i) + 'ln') == 'e' + ('G' * i) + 'km'
+    assert analyze(fst, 'f' + ('H' * i) + 'lp') == 'e' + ('G' * i) + 'ko'
+
+  # class1 to class3
+  assert analyze(fst, 'fn') == 'em'
+  assert analyze(fst, 'fp') == 'eo'
+
+  # class4
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+def test_cyclic_class_ending():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2',
+      [
+        ('g', 'h', [], 0.0),
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3',
+      [
+        ('m', 'n', ['class3'], 0.0), # cyclic rule
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+
+  # class1 alone
+  assert analyze(fst, 'd') == 'c'
+
+  # class1 to class2
+  assert analyze(fst, 'bh') == 'ag'
+  assert analyze(fst, 'bj') == 'ai'
+  assert analyze(fst, 'fh') == 'eg'
+  assert analyze(fst, 'fj') == 'ei'
+
+  # class1 to class2 to class3 (non-cyclic and terminal)
+  assert analyze(fst, 'blp') == 'ako'
+  assert analyze(fst, 'flp') == 'eko'
+
+  # class1 to class2 to class3 (cyclic)
+  for i in range(1, 5):
+    assert analyze(fst, 'bl' + ('n' * i) + 'p') == 'ak' + ('m' * i) + 'o'
+    assert analyze(fst, 'fl' + ('n' * i) + 'p') == 'ek' + ('m' * i) + 'o'
+
+  # class1 to class3 (non-cyclic and terminal)
+  assert analyze(fst, 'fp') == 'eo'
+
+  # class1 to class3 (cyclic)
+  for i in range(1, 5):
+    assert analyze(fst, 'f' + ('n' * i) + 'p') == 'e' + ('m' * i) + 'o'
+
+  # class4
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+# class1 -> class2 -> class3 -> class1
+def test_cycle_period_at_least_two_cycle_includes_starting_class():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', [], 0.0),
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', ['class1'], 0.0), # cycle
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', [], 0.0),
+      ], start=True)
+  })
+
+  # the cycle is from class1 to class2 to class3
+  # i = 0 means no cycle
+  for i in range(5):
+    # class1 to class2 to class3 (cyclic) or class1 to class3 (cyclic)
+    for cyclic_lower, cyclic_upper in [('bln', 'akm'), ('fln', 'ekm')] + [('fn', 'em')]:
+      # class1 alone
+      assert analyze(fst, (cyclic_lower * i) + 'd') == (cyclic_upper * i) + 'c'
+
+      # class1 to class2
+      assert analyze(fst, (cyclic_lower * i) + 'bh') == (cyclic_upper * i) + 'ag'
+      assert analyze(fst, (cyclic_lower * i) + 'bj') == (cyclic_upper * i) + 'ai'
+      assert analyze(fst, (cyclic_lower * i) + 'fh') == (cyclic_upper * i) + 'eg'
+      assert analyze(fst, (cyclic_lower * i) + 'fj') == (cyclic_upper * i) + 'ei'
+
+      # class1 to class2 to class3 (non-cyclic and terminal)
+      assert analyze(fst, (cyclic_lower * i) + 'blp') == (cyclic_upper * i) + 'ako'
+      assert analyze(fst, (cyclic_lower * i) + 'flp') == (cyclic_upper * i) + 'eko'
+
+      # class1 to class3 (non-cyclic and terminal)
+      assert analyze(fst, (cyclic_lower * i) + 'fp') == (cyclic_upper * i) + 'eo'
+
+  # class4
+  assert analyze(fst, 'r') == 'q'
+  assert analyze(fst, 't') == 's'
+
+# class1 -> class2 -> class3 -> class4 -> class2
+def test_cycle_period_at_least_two_cycle_excludes_starting_class():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 0.0),
+        ('c', 'd', [], 0.0),
+        ('e', 'f', ['class2', 'class3'], 0.0)
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', [], 0.0),
+        ('i', 'j', [], 0.0),
+        ('k', 'l', ['class3'], 0.0),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', ['class4'], 0.0),
+        ('o', 'p', [], 0.0),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], 0.0),
+        ('s', 't', ['class2'], 0.0), # cycle
+      ])
+  })
+
+  # class1 alone
+  assert analyze(fst, 'd') == 'c'
+
+  # class1 to class3 (terminal) - impossible for cycle to go back to class1
+  assert analyze(fst, 'fp') == 'eo'
+
+  # class1 to class3 (non-terminal) to class4 (terminal) - impossible for cycle to go back to class1
+  assert analyze(fst, 'fnr') == 'emq'
+
+  fst.draw('uwu.dot')
+
+  # the cycle is from class2 to class3 to class4
+  # i = 0 means no cycle
+  for i in range(5):
+    # class2 to class3 to class4 (cyclic), class3 to class4 (cyclic)
+    cyclic_lower, cyclic_upper = ('lnt', 'kms')
+
+    # class1 to class2 (terminal)
+    assert analyze(fst, 'b' + (cyclic_lower * i) + 'h') == 'a' + (cyclic_upper * i) + 'g'
+    assert analyze(fst, 'b' + (cyclic_lower * i) + 'j') == 'a' + (cyclic_upper * i) + 'i'
+    assert analyze(fst, 'f' + (cyclic_lower * i) + 'h') == 'e' + (cyclic_upper * i) + 'g'
+    assert analyze(fst, 'f' + (cyclic_lower * i) + 'j') == 'e' + (cyclic_upper * i) + 'i'
+
+    # class1 to class2 to class3 (terminal)
+    assert analyze(fst, 'b' + (cyclic_lower * i) + 'lp') == 'a' + (cyclic_upper * i) + 'ko'
+    assert analyze(fst, 'f' + (cyclic_lower * i) + 'lp') == 'e' + (cyclic_upper * i) + 'ko'
+
+    # class1 to class2 to class3 (non-terminal)
+    #   class3 to class4 (terminal)
+    assert analyze(fst, 'b' + (cyclic_lower * i) + 'ln' + 'r') == 'a' + (cyclic_upper * i) + 'km' + 'q'
+    assert analyze(fst, 'f' + (cyclic_lower * i) + 'ln' + 'r') == 'e' + (cyclic_upper * i) + 'km' + 'q'
