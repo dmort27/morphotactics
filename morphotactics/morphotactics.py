@@ -1,4 +1,5 @@
 import pynini
+from pynini.lib import pynutil
 from morphotactics.stem_guesser import StemGuesser
 
 # A recursive, polymorphic depth-first graph search algorithm
@@ -89,7 +90,7 @@ def compile(slots):
         # we will concatenate the rule with the continuation class' FST in the second DFS
 
         # place lower on the input side so that FST can take in input from lower alphabet to perform analysis
-        rule = pynini.cross(lower, upper)
+        rule = pynutil.add_weight(pynini.cross(lower, upper), weight)
 
         # copy rule to fst arc by arc, starting from state start_slot
         old_num_states = fst.num_states()
