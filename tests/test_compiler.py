@@ -3,6 +3,8 @@ from morphotactics.slot import Slot
 from morphotactics.stem_guesser import StemGuesser
 import pytest
 import pynini
+import pywrapfst
+import math
 
 # helpers
 # checks if input_str is in the language of the FSA
@@ -10,9 +12,69 @@ def accepts(fsa, input_str):
   return pynini.compose(input_str, fsa).num_states() != 0
 
 # transducers input_str belonging to lower alphabet to string in upper alphabet
+# the string() method only works for deterministic FSTs (i.e. only 1 path exists)
 def analyze(fst, input_str):
   return pynini.compose(input_str, fst).string()
 
+def all_strings_from_chain(automaton):
+  """Return all strings implied by a non-cyclic automaton.
+     Adapted from fststr library by David Mortensen
+     Source: https://github.com/dmort27/fststr/blob/master/fststr/fststr.py
+
+  Args:
+      chain (Fst): a non-cyclic finite state automaton
+  Returns:
+      (list): a list of (transduced strings, weight) tuples
+  """
+  def dfs(graph, path, paths=[]):
+    target, _, _ = path[-1]
+    if graph.num_arcs(target):
+      for arc in graph.arcs(target):
+        new_target = arc.nextstate
+        new_label = arc.olabel
+        new_weight = arc.weight
+        new_path = path + [(new_target, new_label, float(new_weight))]
+        paths = dfs(graph, new_path, paths)
+    else:
+      paths += [path]
+    return paths
+  if automaton.properties(pywrapfst.CYCLIC, True) == pywrapfst.CYCLIC:
+    raise Exception('FST is cyclic.')
+  start = automaton.start()
+  paths = dfs(automaton, [(start, 0, 0.0)])
+  strings = []
+  for path in paths:
+    chars = []
+    weight = 0.0
+    for (_, k, w) in path:
+      if k:
+        chars.append(chr(k))
+        weight += w
+    strings.append((''.join(chars), weight))
+  return strings
+
+def correct_transduction_and_weights(fst, input_str, expected_paths):
+  """Calculate all possible output paths of fst applied to input_str
+     and see if they match in both symbol and weights with expected_paths
+
+  Args:
+    expected_paths (list): a list of (string, weight) tuples, sorted by weight
+  Returns:
+    (boolean): True if output paths matched expected_paths, False otherwise
+  """
+  output_paths = all_strings_from_chain(pynini.compose(input_str, fst))
+
+  if len(output_paths) != len(expected_paths):
+    return False
+
+  output_paths = sorted(output_paths, key=lambda x: x[1])
+  expected_paths = sorted(expected_paths, key=lambda x: x[1])
+
+  for ((str1, weight1), (str2, weight2)) in zip(output_paths, expected_paths):
+    if str1 != str2 or not math.isclose(weight1, weight2, rel_tol=1e-5):
+      return False
+
+  return True
 
 def test_no_starting_slot_raises_exception():
   with pytest.raises(Exception) as excinfo:
