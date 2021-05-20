@@ -3,6 +3,9 @@ from morphotactics.slot import Slot
 from morphotactics.stem_guesser import StemGuesser
 import pytest
 import pynini
+import pywrapfst
+import math
+import random
 
 # helpers
 # checks if input_str is in the language of the FSA
@@ -10,9 +13,73 @@ def accepts(fsa, input_str):
   return pynini.compose(input_str, fsa).num_states() != 0
 
 # transducers input_str belonging to lower alphabet to string in upper alphabet
+# the string() method only works for deterministic FSTs (i.e. only 1 path exists)
 def analyze(fst, input_str):
   return pynini.compose(input_str, fst).string()
 
+def all_strings_from_chain(automaton):
+  """Return all strings implied by a non-cyclic automaton.
+     Adapted from fststr library by David Mortensen
+     Source: https://github.com/dmort27/fststr/blob/master/fststr/fststr.py
+
+  Args:
+      chain (Fst): a non-cyclic finite state automaton
+  Returns:
+      (list): a list of (transduced strings, weight) tuples
+  """
+  def dfs(graph, path, paths=[]):
+    target, _, _ = path[-1]
+    if graph.num_arcs(target):
+      for arc in graph.arcs(target):
+        new_target = arc.nextstate
+        new_label = arc.olabel
+        new_weight = arc.weight
+        new_path = path + [(new_target, new_label, float(new_weight))]
+        paths = dfs(graph, new_path, paths)
+    else:
+      paths += [path]
+    return paths
+  if automaton.properties(pywrapfst.CYCLIC, True) == pywrapfst.CYCLIC:
+    raise Exception('FST is cyclic.')
+  start = automaton.start()
+  paths = dfs(automaton, [(start, 0, 0.0)])
+  strings = []
+  for path in paths:
+    chars = []
+    weight = 0.0
+    for (_, k, w) in path:
+      if k:
+        chars.append(chr(k))
+        weight += w # semiring product in the tropical semiring is addition
+    strings.append((''.join(chars), weight))
+  return strings
+
+def correct_transduction_and_weights(fst, input_str, expected_paths):
+  """Calculate all possible output paths of fst applied to input_str
+     and see if they match in both symbol and weights with expected_paths
+
+  Args:
+    expected_paths (list): a list of (string, weight) tuples, sorted by weight
+  Returns:
+    (boolean): True if output paths matched expected_paths, False otherwise
+  """
+  output_paths = all_strings_from_chain(pynini.compose(input_str, fst))
+
+  if len(output_paths) != len(expected_paths):
+    return False
+
+  output_paths = sorted(output_paths, key=lambda x: x[1])
+  expected_paths = sorted(expected_paths, key=lambda x: x[1])
+
+  for ((str1, weight1), (str2, weight2)) in zip(output_paths, expected_paths):
+    if str1 != str2:
+      print(str1 + ' does not match ' + str2)
+      return False
+    if math.isclose(weight1, weight2, rel_tol=1e-10):
+      print('path ' + str(str1) + ': ' + str(weight1) + ' does not match ' + str(weight2))
+      return False
+
+  return True
 
 def test_no_starting_slot_raises_exception():
   with pytest.raises(Exception) as excinfo:
@@ -783,3 +850,80 @@ def test_cycle_period_at_least_two_cycle_excludes_starting_class():
     #   class3 to class4 (terminal)
     assert analyze(fst, 'b' + (cyclic_lower * i) + 'ln' + 'r') == 'a' + (cyclic_upper * i) + 'km' + 'q'
     assert analyze(fst, 'f' + (cyclic_lower * i) + 'ln' + 'r') == 'e' + (cyclic_upper * i) + 'km' + 'q'
+
+def test_single_weighted_class():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', [], 0.5),
+        ('c', 'd', [], 0.25),
+        ('e', 'f', [], 0.75),
+        ('g', 'h', [], 0.1)
+      ],
+      start=True)
+  })
+
+  # shortest distance from the start to final state is 0.1
+  assert math.isclose(float(pywrapfst.shortestdistance(fst)[1]), 0.1, rel_tol=1e-5)
+
+  # correct transduction and correct weight
+  assert correct_transduction_and_weights(fst, 'b', [('a', 0.5)])
+  assert correct_transduction_and_weights(fst, 'd', [('c', 0.25)])
+  assert correct_transduction_and_weights(fst, 'f', [('e', 0.75)])
+  assert correct_transduction_and_weights(fst, 'h', [('g', 0.1)])
+
+def test_multiple_weighted_classes():
+  weights = {}
+  for transition in ['ba', 'dc', 'fe', 'hg', 'ji', 'lk', 'nm', 'po', 'rq', 'ts']:
+    weights[transition] = random.random()
+  
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], weights['ba']),
+        ('c', 'd', [], weights['dc']),
+        ('e', 'f', ['class2', 'class3'], weights['fe'])
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', [], weights['hg']),
+        ('i', 'j', [], weights['ji']),
+        ('k', 'l', ['class3'], weights['lk']),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', [], weights['nm']),
+        ('o', 'p', [], weights['po']),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [], weights['rq']),
+        ('s', 't', [], weights['ts']),
+      ], start=True)
+  })
+
+  # class1 alone
+  assert correct_transduction_and_weights(fst, 'd', [('c', weights['dc'])])
+
+  # class1 to class2
+  assert correct_transduction_and_weights(fst, 'bh', [('ag', weights['ba'] + weights['hg'])])
+  assert correct_transduction_and_weights(fst, 'bj', [('ai', weights['ba'] + weights['ji'])])
+  assert correct_transduction_and_weights(fst, 'fh', [('eg', weights['fe'] + weights['hg'])])
+  assert correct_transduction_and_weights(fst, 'fj', [('ei', weights['fe'] + weights['ji'])])
+
+  # class1 to class2 to class3
+  assert correct_transduction_and_weights(fst, 'bln', [('akm', weights['ba'] + weights['lk'] + weights['nm'])])
+  assert correct_transduction_and_weights(fst, 'blp', [('ako', weights['ba'] + weights['lk'] + weights['po'])])
+  assert correct_transduction_and_weights(fst, 'fln', [('ekm', weights['fe'] + weights['lk'] + weights['nm'])])
+  assert correct_transduction_and_weights(fst, 'flp', [('eko', weights['fe'] + weights['lk'] + weights['po'])])
+
+  # class1 to class3
+  assert correct_transduction_and_weights(fst, 'fn', [('em', weights['fe'] + weights['nm'])])
+  assert correct_transduction_and_weights(fst, 'fp', [('eo', weights['fe'] + weights['po'])])
+
+  # class4
+  assert correct_transduction_and_weights(fst, 'r', [('q', weights['rq'])])
+  assert correct_transduction_and_weights(fst, 't', [('s', weights['ts'])])
