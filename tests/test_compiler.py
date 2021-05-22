@@ -59,7 +59,7 @@ def correct_transduction_and_weights(fst, input_str, expected_paths):
      and see if they match in both symbol and weights with expected_paths
 
   Args:
-    expected_paths (list): a list of (string, weight) tuples, sorted by weight
+    expected_paths (list): a list of (string, weight) tuples
   Returns:
     (boolean): True if output paths matched expected_paths, False otherwise
   """
@@ -75,7 +75,7 @@ def correct_transduction_and_weights(fst, input_str, expected_paths):
     if str1 != str2:
       print(str1 + ' does not match ' + str2)
       return False
-    if math.isclose(weight1, weight2, rel_tol=1e-10):
+    if not math.isclose(weight1, weight2, abs_tol=1e-5):
       print('path ' + str(str1) + ': ' + str(weight1) + ' does not match ' + str(weight2))
       return False
 
