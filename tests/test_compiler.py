@@ -59,7 +59,7 @@ def correct_transduction_and_weights(fst, input_str, expected_paths):
      and see if they match in both symbol and weights with expected_paths
 
   Args:
-    expected_paths (list): a list of (string, weight) tuples, sorted by weight
+    expected_paths (list): a list of (string, weight) tuples
   Returns:
     (boolean): True if output paths matched expected_paths, False otherwise
   """
@@ -75,7 +75,7 @@ def correct_transduction_and_weights(fst, input_str, expected_paths):
     if str1 != str2:
       print(str1 + ' does not match ' + str2)
       return False
-    if math.isclose(weight1, weight2, rel_tol=1e-10):
+    if not math.isclose(weight1, weight2, abs_tol=1e-5):
       print('path ' + str(str1) + ': ' + str(weight1) + ' does not match ' + str(weight2))
       return False
 
@@ -828,8 +828,6 @@ def test_cycle_period_at_least_two_cycle_excludes_starting_class():
   # class1 to class3 (non-terminal) to class4 (terminal) - impossible for cycle to go back to class1
   assert analyze(fst, 'fnr') == 'emq'
 
-  fst.draw('uwu.dot')
-
   # the cycle is from class2 to class3 to class4
   # i = 0 means no cycle
   for i in range(5):
@@ -864,7 +862,7 @@ def test_single_weighted_class():
   })
 
   # shortest distance from the start to final state is 0.1
-  assert math.isclose(float(pywrapfst.shortestdistance(fst)[1]), 0.1, rel_tol=1e-5)
+  assert math.isclose(float(pywrapfst.shortestdistance(fst)[1]), 0.1, abs_tol=1e-5)
 
   # correct transduction and correct weight
   assert correct_transduction_and_weights(fst, 'b', [('a', 0.5)])
@@ -927,3 +925,81 @@ def test_multiple_weighted_classes():
   # class4
   assert correct_transduction_and_weights(fst, 'r', [('q', weights['rq'])])
   assert correct_transduction_and_weights(fst, 't', [('s', weights['ts'])])
+
+def test_three_non_deterministic_classes():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 1.0),
+        ('a', 'b', ['class3'], 2.0)
+      ],
+      start=True),
+    Slot('class2',
+      [
+        ('c', 'd', [], 3.0)
+      ]),
+    Slot('class3',
+      [
+        ('c', 'd', [], 4.0)
+      ]),
+  })
+  assert correct_transduction_and_weights(fst, 'bd', [('ac', 1.0 + 3.0), ('ac', 2.0 + 4.0)])
+
+def test_three_non_deterministic_classes_equal_weights():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 1.0),
+        ('a', 'b', ['class3'], 1.0)
+      ],
+      start=True),
+    Slot('class2',
+      [
+        ('c', 'd', [], 2.0)
+      ]),
+    Slot('class3',
+      [
+        ('c', 'd', [], 2.0)
+      ]),
+  })
+  assert correct_transduction_and_weights(fst, 'bd', [('ac', 1.0 + 2.0), ('ac', 1.0 + 2.0)])
+
+def test_three_non_deterministic_classes_different_outputs():
+  fst = compile({
+    Slot('class1',
+      [
+        ('c', 'b', ['class2'], 1.0),
+        ('a', 'b', ['class3'], 2.0)
+      ],
+      start=True),
+    Slot('class2',
+      [
+        ('d', 'd', [], 3.0)
+      ]),
+    Slot('class3',
+      [
+        ('f', 'f', [], 4.0)
+      ]),
+  })
+  assert correct_transduction_and_weights(fst, 'bd', [('cd', 1.0 + 3.0)])
+  assert correct_transduction_and_weights(fst, 'bf', [('af', 2.0 + 4.0)])
+
+def test_three_non_deterministic_classes_different_inputs():
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', ['class2'], 1.0),
+        ('a', 'd', ['class3'], 2.0)
+      ],
+      start=True),
+    Slot('class2',
+      [
+        ('f', 'f', [], 3.0)
+      ]),
+    Slot('class3',
+      [
+        ('h', 'h', [], 4.0)
+      ]),
+  })
+  assert correct_transduction_and_weights(fst, 'bf', [('af', 1.0 + 3.0)])
+  assert correct_transduction_and_weights(fst, 'dh', [('ah', 2.0 + 4.0)])

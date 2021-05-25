@@ -1,6 +1,7 @@
 import pynini
 from pynini.lib import pynutil
 from morphotactics.stem_guesser import StemGuesser
+import pywrapfst
 
 # A recursive, polymorphic depth-first graph search algorithm
 # Runs in O(|V| + |E|) if the state updates are O(1)
@@ -184,6 +185,12 @@ def compile(slots):
   if not fst.verify():
     raise Exception('FST malformed')
 
-  fst.optimize()
+  # epsilon transitions may interfere with determining determinism
+  fst.rmepsilon()
+
+  if fst.properties(pywrapfst.I_DETERMINISTIC, True) == pywrapfst.I_DETERMINISTIC and\
+    fst.properties(pywrapfst.O_DETERMINISTIC, True) == pywrapfst.O_DETERMINISTIC:
+    # optimize() determinizes the FST, which we do not want if it's non-deterministic
+    fst.optimize()
 
   return fst
