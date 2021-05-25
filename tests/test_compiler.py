@@ -28,7 +28,7 @@ def all_strings_from_chain(automaton):
       (list): a list of (transduced strings, weight) tuples
   """
   def dfs(graph, path, paths=[]):
-    target, _, _ = path[-1]
+    target, label, weight = path[-1]
     if graph.num_arcs(target):
       for arc in graph.arcs(target):
         new_target = arc.nextstate
@@ -37,6 +37,8 @@ def all_strings_from_chain(automaton):
         new_path = path + [(new_target, new_label, float(new_weight))]
         paths = dfs(graph, new_path, paths)
     else:
+      path = path[:-1]
+      path += [(target, label, weight + float(graph.final(target)))]
       paths += [path]
     return paths
   if automaton.properties(pywrapfst.CYCLIC, True) == pywrapfst.CYCLIC:
