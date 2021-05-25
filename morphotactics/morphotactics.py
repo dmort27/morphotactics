@@ -123,7 +123,7 @@ def compile(slots):
     slot = slot_map[vertex]
     # works if the slot is a Slot or StemGuesser
     for (_, _, continuation_classes, _) in slot.rules:
-      conts |= set(continuation_classes)
+      conts |= set([cc for cc in continuation_classes if cc])
     return list(conts)
   
   # make a first pass through all of the Slots with DFS
@@ -158,23 +158,23 @@ def compile(slots):
       # StemGuesser does not assign weights or transitions
       cont_classes = slot.rules[0][2]
       for final_state in slot.final_states:
-        if len(cont_classes) == 0:
-          # final states of the rule should be accepting states
-          fst.set_final(final_state)
-        else:
-          # add epsilon transition between FSA's final states and continuation classes
-          for continuation_class in cont_classes:
+        # add epsilon transition between FSA's final states and continuation classes
+        for continuation_class in cont_classes:
+          if not continuation_class:
+            # mark final_state as accepting by setting weight to semiring One
+            fst.set_final(final_state)
+          else:
             arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
             fst.add_arc(final_state, arc)
     else: # regular Slot
       for ((_, _, cont_classes, _), final_state) in zip(slot.rules, slot.final_states):
-        if len(cont_classes) == 0:
-          # final state of the rule should be an accepting state
-          fst.set_final(final_state)
-        else:
-          # add epsilon transition between each rule's final state and continuation classes
-          # note: we currently do not support setting weights for continuation classes
-          for continuation_class in cont_classes:
+        # add epsilon transition between each rule's final state and continuation classes
+        # note: we currently do not support setting weights for continuation classes
+        for continuation_class in cont_classes:
+          if not continuation_class:
+            # mark final_state as accepting by setting weight to semiring One
+            fst.set_final(final_state)
+          else:
             arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
             fst.add_arc(final_state, arc)
     return
