@@ -73,16 +73,13 @@ def compile(slots):
       for state in fsa.states():
         new_state = slot_start_state if state == 0 else (old_num_states + state - 1)
 
-        # final state of FST may not be accepting, so must manually find the final state
-        # there will only be one final state in fsa since it was optimized
+        # final states of FST may not be accepting, so must manually find the final states
         if fsa.final(state) == pynini.Weight.one('tropical'):
-          fsa_final_state = new_state
+          slot.final_states.append(new_state)
 
         for arc in fsa.arcs(state):
           nextstate = slot_start_state if arc.nextstate == 0 else (old_num_states + arc.nextstate - 1)
           fst.add_arc(new_state, pynini.Arc(arc.ilabel, arc.olabel, arc.weight, nextstate))
-
-      slot.final_states.append(fsa_final_state)
     else: # regular Slot
       # create an FST for each rule with pynini and copy over to fst with pywrapfst
       for (upper, lower, cont_classes, weight) in slot.rules:
@@ -159,15 +156,15 @@ def compile(slots):
       # only care about a StemGuesser's continuation classes
       # StemGuesser does not assign weights or transitions
       cont_classes = slot.rules[0][2]
-      final_state = slot.final_states[0] # Slot only has 1 final state
-      if len(cont_classes) == 0:
-        # final state of the rule should be an accepting state
-        fst.set_final(final_state)
-      else:
-        # add epsilon transition between FSA's final state and continuation classes
-        for continuation_class in cont_classes:
-          arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
-          fst.add_arc(final_state, arc)
+      for final_state in slot.final_states:
+        if len(cont_classes) == 0:
+          # final states of the rule should be accepting states
+          fst.set_final(final_state)
+        else:
+          # add epsilon transition between FSA's final states and continuation classes
+          for continuation_class in cont_classes:
+            arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
+            fst.add_arc(final_state, arc)
     else: # regular Slot
       for ((_, _, cont_classes, _), final_state) in zip(slot.rules, slot.final_states):
         if len(cont_classes) == 0:
