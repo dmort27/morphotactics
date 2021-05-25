@@ -14,8 +14,10 @@ class StemGuesser(Slot):
     (same as that of Slot)
     name: name of the StemGuesser Slot
     cont_classes: list of continuation classes
-        example: ['PluralSuffix']
-        The StemGuesser's destination state is a final state if continuation classes are empty
+        example: ['PluralSuffix', None]
+        The StemGuesser's destination state is a final state if None is present in the list
+        A StemGuesser can be both a terminal and non-terminal class
+        Empty list of continuation classes are not allowed
     alphabet (optional): dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
     start (optional): the slot is one of root slots (root class in LEXC)
   """
