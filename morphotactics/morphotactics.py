@@ -75,7 +75,7 @@ def compile(slots):
         new_state = slot_start_state if state == 0 else (old_num_states + state - 1)
 
         # final states of FST may not be accepting, so must manually find the final states
-        if fsa.final(state) == pynini.Weight.one('tropical'):
+        if fsa.final(state) != pynini.Weight.zero('tropical'):
           slot.final_states.append(new_state)
 
         for arc in fsa.arcs(state):
@@ -83,12 +83,12 @@ def compile(slots):
           fst.add_arc(new_state, pynini.Arc(arc.ilabel, arc.olabel, arc.weight, nextstate))
     else: # regular Slot
       # create an FST for each rule with pynini and copy over to fst with pywrapfst
-      for (upper, lower, cont_classes, weight) in slot.rules:
+      for (upper, lower, _, rule_weight) in slot.rules:
         # transitions within same slot could have different continuation classes
         # we will concatenate the rule with the continuation class' FST in the second DFS
 
         # place lower on the input side so that FST can take in input from lower alphabet to perform analysis
-        rule = pynutil.add_weight(pynini.cross(lower, upper), weight)
+        rule = pynutil.add_weight(pynini.cross(lower, upper), rule_weight)
 
         # copy rule to fst arc by arc, starting from state start_slot
         old_num_states = fst.num_states()
@@ -123,7 +123,7 @@ def compile(slots):
     slot = slot_map[vertex]
     # works if the slot is a Slot or StemGuesser
     for (_, _, continuation_classes, _) in slot.rules:
-      conts |= set([cc for cc in continuation_classes if cc])
+      conts |= set([cc for (cc, _) in continuation_classes if cc])
     return list(conts)
   
   # make a first pass through all of the Slots with DFS
@@ -140,7 +140,7 @@ def compile(slots):
   # glue all Slots together, Slot by Slot
   # note that we cannot concatenate each Slot to its continuation's FST 
   #    because its continuation's FST is not guaranteed to have finished processing
-  def second_pass(state, vertex):
+  def second_pass(_, vertex):
     if vertex == 'start':
       # add an epsilon transition between each starting state and starting slots
       # will be removed during optimization
@@ -159,23 +159,23 @@ def compile(slots):
       cont_classes = slot.rules[0][2]
       for final_state in slot.final_states:
         # add epsilon transition between FSA's final states and continuation classes
-        for continuation_class in cont_classes:
+        for (continuation_class, weight) in cont_classes:
           if not continuation_class:
-            # mark final_state as accepting by setting weight to semiring One
-            fst.set_final(final_state)
+            # mark final_state as accepting by setting weight to semiring One or weight specified by user
+            fst.set_final(final_state, weight)
           else:
-            arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
+            arc = pynini.Arc(0, 0, weight, start_states[continuation_class])
             fst.add_arc(final_state, arc)
     else: # regular Slot
       for ((_, _, cont_classes, _), final_state) in zip(slot.rules, slot.final_states):
         # add epsilon transition between each rule's final state and continuation classes
         # note: we currently do not support setting weights for continuation classes
-        for continuation_class in cont_classes:
+        for (continuation_class, weight) in cont_classes:
           if not continuation_class:
-            # mark final_state as accepting by setting weight to semiring One
-            fst.set_final(final_state)
+            # mark final_state as accepting by setting weight to semiring One or weight specified by user
+            fst.set_final(final_state, weight)
           else:
-            arc = pynini.Arc(0, 0, 0.0, start_states[continuation_class])
+            arc = pynini.Arc(0, 0, weight, start_states[continuation_class])
             fst.add_arc(final_state, arc)
     return
   
