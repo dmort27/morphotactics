@@ -89,7 +89,7 @@ def test_no_starting_slot_raises_exception():
   assert 'need at least 1 slot to be a starting slot' in str(excinfo.value)
 
 def test_single_starting_class_no_continuation():
-  fst = compile({ Slot('name', [('a', 'b', [None], 0.0)], start=True) })
+  fst = compile({ Slot('name', [('a', 'b', [(None, 0.0)], 0.0)], start=True) })
   
   assert analyze(fst, 'b') == 'a' # direction of morphological analysis
 
@@ -99,16 +99,16 @@ def test_single_starting_class_no_continuation():
 
 def test_single_starting_class_single_continuation():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class2'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [None], 0.0)]),
+    Slot('class1', [('a', 'b', [('class2', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [(None, 0.0)], 0.0)]),
   })
   assert analyze(fst, 'bd') == 'ac'
 
 def test_single_starting_class_multiple_continuations():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class2', 'class3'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [None], 0.0)]),
-    Slot('class3', [('e', 'f', [None], 0.0)]),
+    Slot('class1', [('a', 'b', [('class2', 0.0), ('class3', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [(None, 0.0)], 0.0)]),
+    Slot('class3', [('e', 'f', [(None, 0.0)], 0.0)]),
   })
   assert analyze(fst, 'bd') == 'ac'
   assert analyze(fst, 'bf') == 'ae'
@@ -121,10 +121,10 @@ def test_single_starting_class_multiple_continuations():
 
 def test_single_starting_class_multiple_classes():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class2'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', ['class3'], 0.0)]),
-    Slot('class3', [('e', 'f', ['class4'], 0.0)]),
-    Slot('class4', [('g', 'h', [None], 0.0)])
+    Slot('class1', [('a', 'b', [('class2', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [('class3', 0.0)], 0.0)]),
+    Slot('class3', [('e', 'f', [('class4', 0.0)], 0.0)]),
+    Slot('class4', [('g', 'h', [(None, 0.0)], 0.0)])
   })
   assert analyze(fst, 'bdfh') == 'aceg'
   
@@ -138,8 +138,8 @@ def test_single_starting_class_multiple_classes():
 
 def test_multiple_starting_classes_no_continuation():
   fst = compile({
-    Slot('class1', [('a', 'b', [None], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [None], 0.0)], start=True)
+    Slot('class1', [('a', 'b', [(None, 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [(None, 0.0)], 0.0)], start=True)
   })
 
   assert analyze(fst, 'b') == 'a'
@@ -153,9 +153,9 @@ def test_multiple_starting_classes_no_continuation():
 
 def test_multiple_starting_classes_same_continuation():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class3'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', ['class3'], 0.0)], start=True),
-    Slot('class3', [('e', 'f', [None], 0.0)])
+    Slot('class1', [('a', 'b', [('class3', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [('class3', 0.0)], 0.0)], start=True),
+    Slot('class3', [('e', 'f', [(None, 0.0)], 0.0)])
   })
   assert analyze(fst, 'bf') == 'ae'
   assert analyze(fst, 'df') == 'ce'
@@ -172,9 +172,9 @@ def test_multiple_starting_classes_same_continuation():
 
 def test_multiple_starting_classes_some_have_continuation_others_do_not():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class3'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [None], 0.0)], start=True),
-    Slot('class3', [('e', 'f', [None], 0.0)])
+    Slot('class1', [('a', 'b', [('class3', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [(None, 0.0)], 0.0)], start=True),
+    Slot('class3', [('e', 'f', [(None, 0.0)], 0.0)])
   })
   assert analyze(fst, 'bf') == 'ae'
   assert analyze(fst, 'd') == 'c'
@@ -189,10 +189,10 @@ def test_multiple_starting_classes_some_have_continuation_others_do_not():
 
 def test_multiple_starting_classes_different_continuation():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class3'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', ['class4'], 0.0)], start=True),
-    Slot('class3', [('e', 'f', [None], 0.0)]),
-    Slot('class4', [('g', 'h', [None], 0.0)])
+    Slot('class1', [('a', 'b', [('class3', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [('class4', 0.0)], 0.0)], start=True),
+    Slot('class3', [('e', 'f', [(None, 0.0)], 0.0)]),
+    Slot('class4', [('g', 'h', [(None, 0.0)], 0.0)])
   })
   assert analyze(fst, 'bf') == 'ae'
   assert analyze(fst, 'dh') == 'cg'
@@ -212,11 +212,11 @@ def test_multiple_starting_classes_different_continuation():
 
 def test_multiple_starting_classes_single_rule_per_class_multiple_continuations():
   fst = compile({
-    Slot('class1', [('a', 'b', ['class2', 'class3', 'class4'], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [None], 0.0)]),
-    Slot('class3', [('e', 'f', [None], 0.0)]),
-    Slot('class4', [('g', 'h', [None], 0.0)]),
-    Slot('class5', [('i', 'j', [None], 0.0)], start=True)
+    Slot('class1', [('a', 'b', [('class2', 0.0), ('class3', 0.0), ('class4', 0.0)], 0.0)], start=True),
+    Slot('class2', [('c', 'd', [(None, 0.0)], 0.0)]),
+    Slot('class3', [('e', 'f', [(None, 0.0)], 0.0)]),
+    Slot('class4', [('g', 'h', [(None, 0.0)], 0.0)]),
+    Slot('class5', [('i', 'j', [(None, 0.0)], 0.0)], start=True)
   })
   assert analyze(fst, 'bd') == 'ac'
   assert analyze(fst, 'bf') == 'ae'
@@ -240,10 +240,10 @@ def test_multiple_rules_single_class_no_continuations():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', [None], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', [None], 0.0),
-        ('g', 'h', [None], 0.0),
+        ('a', 'b', [(None, 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [(None, 0.0)], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
       ], 
       start=True),
   })
@@ -267,15 +267,15 @@ def test_multiple_rules_single_starting_class_with_multiple_continuations():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2', 'class3'], 0.0),
-        ('c', 'd', ['class4'], 0.0),
-        ('e', 'f', [None], 0.0),
-        ('g', 'h', [None], 0.0)
+        ('a', 'b', [('class2', 0.0), ('class3', 0.0)], 0.0),
+        ('c', 'd', [('class4', 0.0)], 0.0),
+        ('e', 'f', [(None, 0.0)], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0)
       ],
       start=True),
-    Slot('class2', [('i', 'j', [None], 0.0)]),
-    Slot('class3', [('k', 'l', [None], 0.0)]),
-    Slot('class4', [('m', 'n', [None], 0.0)])
+    Slot('class2', [('i', 'j', [(None, 0.0)], 0.0)]),
+    Slot('class3', [('k', 'l', [(None, 0.0)], 0.0)]),
+    Slot('class4', [('m', 'n', [(None, 0.0)], 0.0)])
   })
 
   assert analyze(fst, 'bj') == 'ai'
@@ -292,28 +292,28 @@ def test_multiple_rules_multiple_classes_multiple_continuations():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
   
@@ -345,28 +345,28 @@ def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesse
     'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
     'V': ['a', 'e', 'i', 'o']
   }
-  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', ['class2', 'class3'], 
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [('class2', 0.0), ('class3', 0.0)], 
     alphabet=nahuatl_alphabet, start=True)
   
   fst = compile({
     bimoraic_fsa,
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
   
@@ -396,28 +396,28 @@ def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesse
     'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
     'V': ['a', 'e', 'i', 'o']
   }
-  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', ['class3'], 
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [('class3', 0.0)], 
     alphabet=nahuatl_alphabet)
 
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['VerbStem'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['VerbStem', 'class3'], 0.0)
+        ('a', 'b', [('VerbStem', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('VerbStem', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     bimoraic_fsa,
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
   
@@ -452,27 +452,27 @@ def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesse
     'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
     'V': ['a', 'e', 'i', 'o']
   }
-  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [None], 
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [(None, 0.0)], 
     alphabet=nahuatl_alphabet)
 
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', ['VerbStem'], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [('VerbStem', 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('m', 'n', ['VerbStem'], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [('VerbStem', 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', ['VerbStem'], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [('VerbStem', 0.0)], 0.0),
       ]),
     bimoraic_fsa
   })
@@ -503,9 +503,9 @@ def test_single_cyclic_class():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class1'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', [None], 0.0)
+        ('a', 'b', [('class1', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [(None, 0.0)], 0.0)
       ],
       start=True),
   })
@@ -537,28 +537,28 @@ def test_cyclic_class_starting():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class1'], 0.0), # the cyclic rule
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class1', 0.0)], 0.0), # the cyclic rule
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
   
@@ -604,29 +604,29 @@ def test_cyclic_class_in_middle():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', ['class2'], 0.0), # cyclic rule
-        ('G', 'H', ['class2'], 0.0), # cyclic rule
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [('class2', 0.0)], 0.0), # cyclic rule
+        ('G', 'H', [('class2', 0.0)], 0.0), # cyclic rule
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
 
@@ -682,28 +682,28 @@ def test_cyclic_class_ending():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3',
       [
-        ('m', 'n', ['class3'], 0.0), # cyclic rule
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [('class3', 0.0)], 0.0), # cyclic rule
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
 
@@ -741,28 +741,28 @@ def test_cycle_period_at_least_two_cycle_includes_starting_class():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', ['class1'], 0.0), # cycle
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [('class1', 0.0)], 0.0), # cycle
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
 
@@ -796,28 +796,28 @@ def test_cycle_period_at_least_two_cycle_excludes_starting_class():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3'], 0.0)
+        ('a', 'b', [('class2', 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3'], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', ['class4'], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [('class4', 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', ['class2'], 0.0), # cycle
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [('class2', 0.0)], 0.0), # cycle
       ])
   })
 
@@ -855,10 +855,10 @@ def test_single_weighted_class():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', [None], 0.5),
-        ('c', 'd', [None], 0.25),
-        ('e', 'f', [None], 0.75),
-        ('g', 'h', [None], 0.1)
+        ('a', 'b', [(None, 0.0)], 0.5),
+        ('c', 'd', [(None, 0.0)], 0.25),
+        ('e', 'f', [(None, 0.0)], 0.75),
+        ('g', 'h', [(None, 0.0)], 0.1)
       ],
       start=True)
   })
@@ -880,28 +880,28 @@ def test_multiple_weighted_classes():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], weights['ba']),
-        ('c', 'd', [None], weights['dc']),
-        ('e', 'f', ['class2', 'class3'], weights['fe'])
+        ('a', 'b', [('class2', 0.0)], weights['ba']),
+        ('c', 'd', [(None, 0.0)], weights['dc']),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0)], weights['fe'])
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], weights['hg']),
-        ('i', 'j', [None], weights['ji']),
-        ('k', 'l', ['class3'], weights['lk']),
+        ('g', 'h', [(None, 0.0)], weights['hg']),
+        ('i', 'j', [(None, 0.0)], weights['ji']),
+        ('k', 'l', [('class3', 0.0)], weights['lk']),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], weights['nm']),
-        ('o', 'p', [None], weights['po']),
+        ('m', 'n', [(None, 0.0)], weights['nm']),
+        ('o', 'p', [(None, 0.0)], weights['po']),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], weights['rq']),
-        ('s', 't', [None], weights['ts']),
+        ('q', 'r', [(None, 0.0)], weights['rq']),
+        ('s', 't', [(None, 0.0)], weights['ts']),
       ], start=True)
   })
 
@@ -932,17 +932,17 @@ def test_three_non_deterministic_classes():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 1.0),
-        ('a', 'b', ['class3'], 2.0)
+        ('a', 'b', [('class2', 0.0)], 1.0),
+        ('a', 'b', [('class3', 0.0)], 2.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('c', 'd', [None], 3.0)
+        ('c', 'd', [(None, 0.0)], 3.0)
       ]),
     Slot('class3',
       [
-        ('c', 'd', [None], 4.0)
+        ('c', 'd', [(None, 0.0)], 4.0)
       ]),
   })
   assert correct_transduction_and_weights(fst, 'bd', [('ac', 1.0 + 3.0), ('ac', 2.0 + 4.0)])
@@ -951,17 +951,17 @@ def test_three_non_deterministic_classes_equal_weights():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 1.0),
-        ('a', 'b', ['class3'], 1.0)
+        ('a', 'b', [('class2', 0.0)], 1.0),
+        ('a', 'b', [('class3', 0.0)], 1.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('c', 'd', [None], 2.0)
+        ('c', 'd', [(None, 0.0)], 2.0)
       ]),
     Slot('class3',
       [
-        ('c', 'd', [None], 2.0)
+        ('c', 'd', [(None, 0.0)], 2.0)
       ]),
   })
   assert correct_transduction_and_weights(fst, 'bd', [('ac', 1.0 + 2.0), ('ac', 1.0 + 2.0)])
@@ -970,17 +970,17 @@ def test_three_non_deterministic_classes_different_outputs():
   fst = compile({
     Slot('class1',
       [
-        ('c', 'b', ['class2'], 1.0),
-        ('a', 'b', ['class3'], 2.0)
+        ('c', 'b', [('class2', 0.0)], 1.0),
+        ('a', 'b', [('class3', 0.0)], 2.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('d', 'd', [None], 3.0)
+        ('d', 'd', [(None, 0.0)], 3.0)
       ]),
     Slot('class3',
       [
-        ('f', 'f', [None], 4.0)
+        ('f', 'f', [(None, 0.0)], 4.0)
       ]),
   })
   assert correct_transduction_and_weights(fst, 'bd', [('cd', 1.0 + 3.0)])
@@ -990,17 +990,17 @@ def test_three_non_deterministic_classes_different_inputs():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2'], 1.0),
-        ('a', 'd', ['class3'], 2.0)
+        ('a', 'b', [('class2', 0.0)], 1.0),
+        ('a', 'd', [('class3', 0.0)], 2.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('f', 'f', [None], 3.0)
+        ('f', 'f', [(None, 0.0)], 3.0)
       ]),
     Slot('class3',
       [
-        ('h', 'h', [None], 4.0)
+        ('h', 'h', [(None, 0.0)], 4.0)
       ]),
   })
   assert correct_transduction_and_weights(fst, 'bf', [('af', 1.0 + 3.0)])
@@ -1010,12 +1010,12 @@ def test_both_terminal_and_non_terminal_rule():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2', None], 1.0),
+        ('a', 'b', [('class2', 0.0), (None, 0.0)], 1.0),
       ],
       start=True),
     Slot('class2',
       [
-        ('c', 'd', [None], 2.0)
+        ('c', 'd', [(None, 0.0)], 2.0)
       ]),
   })
   
@@ -1026,17 +1026,17 @@ def test_non_deterministic_both_terminal_non_terminal_rule():
   fst = compile({
     Slot('class1',
       [
-        ('c', 'b', ['class2', None], 1.0),
-        ('a', 'b', ['class3', None], 2.0)
+        ('c', 'b', [('class2', 0.0), (None, 0.0)], 1.0),
+        ('a', 'b', [('class3', 0.0), (None, 0.0)], 2.0)
       ],
       start=True),
     Slot('class2',
       [
-        ('d', 'd', [None], 3.0)
+        ('d', 'd', [(None, 0.0)], 3.0)
       ]),
     Slot('class3',
       [
-        ('f', 'f', [None], 4.0)
+        ('f', 'f', [(None, 0.0)], 4.0)
       ]),
   })
   
@@ -1055,28 +1055,28 @@ def test_multiple_weighted_classes_both_terminal_non_terminal_rules():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2', None], weights['ba']),
-        ('c', 'd', [None], weights['dc']),
-        ('e', 'f', ['class2', 'class3', None], weights['fe'])
+        ('a', 'b', [('class2', 0.0), (None, 0.0)], weights['ba']),
+        ('c', 'd', [(None, 0.0)], weights['dc']),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0), (None, 0.0)], weights['fe'])
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], weights['hg']),
-        ('i', 'j', [None], weights['ji']),
-        ('k', 'l', ['class3', None], weights['lk']),
+        ('g', 'h', [(None, 0.0)], weights['hg']),
+        ('i', 'j', [(None, 0.0)], weights['ji']),
+        ('k', 'l', [('class3', 0.0), (None, 0.0)], weights['lk']),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], weights['nm']),
-        ('o', 'p', [None], weights['po']),
+        ('m', 'n', [(None, 0.0)], weights['nm']),
+        ('o', 'p', [(None, 0.0)], weights['po']),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], weights['rq']),
-        ('s', 't', [None], weights['ts']),
+        ('q', 'r', [(None, 0.0)], weights['rq']),
+        ('s', 't', [(None, 0.0)], weights['ts']),
       ], start=True)
   })
 
@@ -1112,28 +1112,28 @@ def test_stem_guesser_both_terminal_non_terminal():
     'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
     'V': ['a', 'e', 'i', 'o']
   }
-  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', ['class3', None], 
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [('class3', 0.0), (None, 0.0)], 
     alphabet=nahuatl_alphabet)
 
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['VerbStem', None], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['VerbStem', 'class3', None], 0.0)
+        ('a', 'b', [('VerbStem', 0.0), (None, 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('VerbStem', 0.0), ('class3', 0.0), (None, 0.0)], 0.0)
       ],
       start=True),
     bimoraic_fsa,
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
   
@@ -1174,29 +1174,29 @@ def test_cycle_period_one_both_terminal_non_terminal_rules():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2', None], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3', None], 0.0)
+        ('a', 'b', [('class2', 0.0), (None, 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0), (None, 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', ['class2', None], 0.0), # cyclic rule
-        ('G', 'H', ['class2', None], 0.0), # cyclic rule
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3', None], 0.0),
+        ('g', 'h', [('class2', 0.0), (None, 0.0)], 0.0), # cyclic rule
+        ('G', 'H', [('class2', 0.0), (None, 0.0)], 0.0), # cyclic rule
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0), (None, 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', [None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [(None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', [None], 0.0),
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [(None, 0.0)], 0.0),
       ], start=True)
   })
 
@@ -1249,28 +1249,28 @@ def test_cycle_period_two_both_terminal_non_terminal_rules():
   fst = compile({
     Slot('class1',
       [
-        ('a', 'b', ['class2', None], 0.0),
-        ('c', 'd', [None], 0.0),
-        ('e', 'f', ['class2', 'class3', None], 0.0)
+        ('a', 'b', [('class2', 0.0), (None, 0.0)], 0.0),
+        ('c', 'd', [(None, 0.0)], 0.0),
+        ('e', 'f', [('class2', 0.0), ('class3', 0.0), (None, 0.0)], 0.0)
       ],
       start=True),
     Slot('class2', 
       [
-        ('g', 'h', [None], 0.0),
-        ('i', 'j', [None], 0.0),
-        ('k', 'l', ['class3', None], 0.0),
+        ('g', 'h', [(None, 0.0)], 0.0),
+        ('i', 'j', [(None, 0.0)], 0.0),
+        ('k', 'l', [('class3', 0.0), (None, 0.0)], 0.0),
       ]
     ),
     Slot('class3', 
       [
-        ('m', 'n', ['class4', None], 0.0),
-        ('o', 'p', [None], 0.0),
+        ('m', 'n', [('class4', 0.0), (None, 0.0)], 0.0),
+        ('o', 'p', [(None, 0.0)], 0.0),
       ]
     ),
     Slot('class4', 
       [
-        ('q', 'r', [None], 0.0),
-        ('s', 't', ['class2', None], 0.0), # cycle
+        ('q', 'r', [(None, 0.0)], 0.0),
+        ('s', 't', [('class2', 0.0), (None, 0.0)], 0.0), # cycle
       ])
   })
 
@@ -1316,3 +1316,63 @@ def test_cycle_period_two_both_terminal_non_terminal_rules():
     assert analyze(fst, 'f' + (cyclic_lower * i) + 'ln' + 'r') == 'e' + (cyclic_upper * i) + 'km' + 'q'
     assert analyze(fst, 'b' + (cyclic_lower * i) + 'ln' + 't') == 'a' + (cyclic_upper * i) + 'km' + 's'
     assert analyze(fst, 'f' + (cyclic_lower * i) + 'ln' + 't') == 'e' + (cyclic_upper * i) + 'km' + 's'
+
+def test_weight_continuation_classes():
+  weights = {}
+  for transition in ['ba', 'dc', 'fe', 'hg', 'ji', 'lk', 'nm', 'po', 'rq', 'ts']:
+    weights[transition] = random.random()
+  
+  fst = compile({
+    Slot('class1',
+      [
+        ('a', 'b', [('class2', 1.0), (None, 2.0)], weights['ba']),
+        ('c', 'd', [(None, 3.0)], weights['dc']),
+        ('e', 'f', [('class2', 4.0), ('class3', 5.0), (None, 6.0)], weights['fe'])
+      ],
+      start=True),
+    Slot('class2', 
+      [
+        ('g', 'h', [(None, 7.0)], weights['hg']),
+        ('i', 'j', [(None, 8.0)], weights['ji']),
+        ('k', 'l', [('class3', 9.0), (None, 10.0)], weights['lk']),
+      ]
+    ),
+    Slot('class3', 
+      [
+        ('m', 'n', [(None, 11.0)], weights['nm']),
+        ('o', 'p', [(None, 12.0)], weights['po']),
+      ]
+    ),
+    Slot('class4', 
+      [
+        ('q', 'r', [(None, 13.0)], weights['rq']),
+        ('s', 't', [(None, 14.0)], weights['ts']),
+      ], start=True)
+  })
+
+  # class1 alone
+  assert correct_transduction_and_weights(fst, 'd', [('c', weights['dc'] + 3.0)])
+  assert correct_transduction_and_weights(fst, 'b', [('a', weights['ba'] + 2.0)])
+  assert correct_transduction_and_weights(fst, 'f', [('e', weights['fe'] + 6.0)])
+
+  # class1 to class2
+  assert correct_transduction_and_weights(fst, 'bh', [('ag', weights['ba'] + 1.0 + weights['hg'] + 7.0)])
+  assert correct_transduction_and_weights(fst, 'bj', [('ai', weights['ba'] + 1.0 + weights['ji'] + 8.0)])
+  assert correct_transduction_and_weights(fst, 'bl', [('ak', weights['ba'] + 1.0 + weights['lk'] + 10.0)])
+  assert correct_transduction_and_weights(fst, 'fh', [('eg', weights['fe'] + 4.0 + weights['hg'] + 7.0)])
+  assert correct_transduction_and_weights(fst, 'fj', [('ei', weights['fe'] + 4.0 + weights['ji'] + 8.0)])
+  assert correct_transduction_and_weights(fst, 'fl', [('ek', weights['fe'] + 4.0 + weights['lk'] + 10.0)])
+
+  # class1 to class2 to class3
+  assert correct_transduction_and_weights(fst, 'bln', [('akm', weights['ba'] + 1.0 + weights['lk'] + 9.0 + weights['nm'] + 11.0)])
+  assert correct_transduction_and_weights(fst, 'blp', [('ako', weights['ba'] + 1.0 + weights['lk'] + 9.0 + weights['po'] + 12.0)])
+  assert correct_transduction_and_weights(fst, 'fln', [('ekm', weights['fe'] + 4.0 + weights['lk'] + 9.0 + weights['nm'] + 11.0)])
+  assert correct_transduction_and_weights(fst, 'flp', [('eko', weights['fe'] + 4.0 + weights['lk'] + 9.0 + weights['po'] + 12.0)])
+
+  # class1 to class3
+  assert correct_transduction_and_weights(fst, 'fn', [('em', weights['fe'] + 5.0 + weights['nm'] + 11.0)])
+  assert correct_transduction_and_weights(fst, 'fp', [('eo', weights['fe'] + 5.0 + weights['po'] + 12.0)])
+
+  # class4
+  assert correct_transduction_and_weights(fst, 'r', [('q', weights['rq'] + 13.0)])
+  assert correct_transduction_and_weights(fst, 't', [('s', weights['ts'] + 14.0)])
