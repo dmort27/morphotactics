@@ -7,7 +7,7 @@ def test_slot_start_false_by_default():
 
 def test_slot_state():
   dummy_class = 'SomeClass'
-  dummy_rule = ('', '', [None], 0.0)
+  dummy_rule = ('', '', [(None, 0.0)], 0.0)
   slot = Slot('SomeClass', [dummy_rule], start=True)
   assert slot.start
   assert slot.name == dummy_class

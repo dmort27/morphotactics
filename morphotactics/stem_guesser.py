@@ -13,8 +13,8 @@ class StemGuesser(Slot):
     
     (same as that of Slot)
     name: name of the StemGuesser Slot
-    cont_classes: list of continuation classes
-        example: ['PluralSuffix', None]
+    cont_classes: list of continuation classes and their weights
+        example: [('PluralSuffix', 0.8), (None, 0.5)]
         The StemGuesser's destination state is a final state if None is present in the list
         A StemGuesser can be both a terminal and non-terminal class
         Empty list of continuation classes are not allowed

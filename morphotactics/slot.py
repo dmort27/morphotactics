@@ -8,12 +8,14 @@ class Slot:
 
   Attributes:
     name: name of the slot
-    rules: a list of tuples (upper alphabet symbols, lower alphabet symbols, list of continuation classes, weight)
-        example: ('ni-', 'ni', ['RefObj', None, 'VerbStem'], 0.0)
+    rules: a list of tuples (upper alphabet symbols, lower alphabet symbols, list of continuation classes, rule weight)
+        example: ('ni-', 'ni', [('RefObj', 0.8), (None, 0.3), ('VerbStem', 0.4)], 0.0)
         A rule's destination state is a final state if None is present in the continuation class list
-        The weight is the weight of the transition from the slot's initial state to this particular rule
+        The rule weight is the weight of the transition from the slot's initial state to this particular rule
+        When naming the continuation class, the weight of transitioning to it must be specified too in a tuple
         A StemGuesser can be both a terminal and non-terminal class (as shown in example above)
         Empty list of continuation classes not allowed
+        If a cont class is None, then the weight of the accepting state is the weight specified in the tuple
     start (optional): the slot is one of the starting slots (root class in LEXC)
   """
   def __init__(self, name, rules, start=False):
