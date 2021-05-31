@@ -121,10 +121,10 @@ def test_single_starting_class_multiple_continuations():
 
 def test_single_starting_class_multiple_classes():
   fst = compile({
-    Slot('class1', [('a', 'b', [('class2', 0.0)], 0.0)], start=True),
-    Slot('class2', [('c', 'd', [('class3', 0.0)], 0.0)]),
-    Slot('class3', [('e', 'f', [('class4', 0.0)], 0.0)]),
-    Slot('class4', [('g', 'h', [(None, 0.0)], 0.0)])
+    Slot('class1', [('a', 'b', ['class2'], 0.0)], start=True),
+    Slot('class2', [('c', 'd', ['class3'], 0.0)]),
+    Slot('class3', [('e', 'f', ['class4'], 0.0)]),
+    Slot('class4', [('g', 'h', [None], 0.0)])
   })
   assert analyze(fst, 'bdfh') == 'aceg'
   
@@ -452,7 +452,7 @@ def test_multiple_rules_multiple_classes_multiple_continuations_with_stem_guesse
     'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
     'V': ['a', 'e', 'i', 'o']
   }
-  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [(None, 0.0)], 
+  bimoraic_fsa = StemGuesser('.*V.*V', 'VerbStem', [(None, 0.0)],
     alphabet=nahuatl_alphabet)
 
   fst = compile({
