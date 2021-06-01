@@ -28,7 +28,6 @@ def compile(slots):
   """
   Returns an OpenFST FST representing the morphotactic rules of an entire lexicon
   Resolves all dependencies between continuation classes of multiple slots
-  Requires that the slot dependencies are acyclic and form a directed acyclic graph
   Note: no slot can be named 'start'
 
   Args:
