@@ -6,9 +6,10 @@ import pynini
 import pywrapfst
 import math
 import random
+from typing import List, Tuple
 
 # helpers
-def accepts(fsa, input_str):
+def accepts(fsa: pynini.Fst, input_str: str) -> bool:
   """
   Check if input_str is in the language of the FSA fsa
   Pynini converts input_str into a linear chain automaton and composes it 
@@ -18,26 +19,37 @@ def accepts(fsa, input_str):
     fsa (Fst): a finite-state acceptor
     input_str (string): the string in question
   Returns:
-    (boolean): True if input_str is in fsa's language
+    (bool): True if input_str is in fsa's language
   """
   return pynini.compose(input_str, fsa).num_states() != 0
 
-# transducers input_str belonging to lower alphabet to string in upper alphabet
-# the string() method only works for deterministic FSTs (i.e. only 1 path exists)
-def analyze(fst, input_str):
+def analyze(fst: pynini.Fst, input_str: str) -> str:
+  """
+  Transduces input_str belonging to lower alphabet to string in upper alphabet
+  Pynini converts input_str into a linear chain automaton and composes it 
+  with the FST. Calls string() to convert the composed FST into a string.
+  string() only works for deterministic FSTs (i.e. only 1 path exists for input_str)
+  
+  Args:
+    fst (Fst): an FST
+    input_str (string): the string in question, made of symbols from the FST's input alphabet
+  Returns:
+    (string): the transduced output string
+  """
   return pynini.compose(input_str, fst).string()
 
-def all_strings_from_chain(automaton):
-  """Return all strings implied by a non-cyclic automaton.
-     Adapted from fststr library by David Mortensen
-     Source: https://github.com/dmort27/fststr/blob/master/fststr/fststr.py
+def all_strings_from_chain(automaton: pynini.Fst) -> List[str]:
+  """
+  Return all strings implied by a non-cyclic automaton.
+  Adapted from fststr library by David Mortensen
+  Source: https://github.com/dmort27/fststr/blob/master/fststr/fststr.py
 
   Args:
-      chain (Fst): a non-cyclic finite state automaton
+    chain (Fst): a non-cyclic finite state automaton
   Returns:
-      (list): a list of (transduced strings, weight) tuples
+    (list): a list of (transduced strings, weight) tuples
   """
-  def dfs(graph, path, paths=[]):
+  def dfs(graph: pynini.Fst, path: List[Tuple[int, str, float]], paths: List[List[Tuple[int, str, float]]] = []):
     target, label, weight = path[-1]
     if graph.num_arcs(target):
       for arc in graph.arcs(target):
@@ -66,11 +78,13 @@ def all_strings_from_chain(automaton):
     strings.append((''.join(chars), weight))
   return strings
 
-def correct_transduction_and_weights(fst, input_str, expected_paths):
+def correct_transduction_and_weights(fst: pynini.Fst, input_str: str, expected_paths: List[Tuple[str, float]]) -> bool:
   """Calculate all possible output paths of fst applied to input_str
      and see if they match in both symbol and weights with expected_paths
 
   Args:
+    fst (Fst): the FST
+    input_str: the string to be transduced
     expected_paths (list): a list of (string, weight) tuples
   Returns:
     (boolean): True if output paths matched expected_paths, False otherwise

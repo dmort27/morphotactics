@@ -1,7 +1,9 @@
 import pynini
 from pynini.lib import pynutil
 from morphotactics.stem_guesser import StemGuesser
+from morphotactics.slot import Slot
 import pywrapfst
+from typing import Set
 
 # A recursive, polymorphic depth-first graph search algorithm
 # Runs in O(|V| + |E|) if the state updates are O(1)
@@ -24,7 +26,7 @@ def _dfs(state, visited, vertex, neighbors, visit, revisit, finish):
       (state, visited) = _dfs(state, visited, nbor, neighbors, visit, revisit, finish)
     return (finish(state, vertex), visited)
 
-def compile(slots):
+def compile(slots: Set[Slot]) -> pynini.Fst:
   """
   Returns an OpenFST FST representing the morphotactic rules of an entire lexicon
   Resolves all dependencies between continuation classes of multiple slots

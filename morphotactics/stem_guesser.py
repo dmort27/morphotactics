@@ -1,5 +1,6 @@
 import pynini
 from morphotactics.slot import Slot
+from typing import List, Dict, Tuple
 
 class StemGuesser(Slot):
   """
@@ -7,7 +8,7 @@ class StemGuesser(Slot):
   to identify stems in words so as to separate the stem from its affixes,
   which will be processed by rules in other Slots
   """
-  def __init__(self, min_word_constraint, name, cont_classes, alphabet={}, start=False):
+  def __init__(self, min_word_constraint: str, name: str, cont_classes: List[Tuple[str, float]], alphabet: Dict[str, List[str]]={}, start: bool=False):
     """
     Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
     Substitutes phoneme classes with symbols.
