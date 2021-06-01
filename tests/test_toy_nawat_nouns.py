@@ -23,12 +23,12 @@ nawat_alphabet = {
 # This was used to debug how compile handles StemGuessers.
 def parser_from_stem(stem):
     return compile({
-        StemGuesser(stem, 'NounStem', ['Absolutive'], alphabet=nawat_alphabet, start=True),
+        StemGuesser(stem, 'NounStem', [('Absolutive', 0.0)], alphabet=nawat_alphabet, start=True),
         Slot('Absolutive',
              [
-                 ('-t', 't', [], 0.0),
-                 ('-ti', 'ti', [], 0.0),
-                 ('l-li', 'li', [], 0.0)  # This case actually has l in the stem
+                 ('-t', 't', [(None, 0.0)], 0.0),
+                 ('-ti', 'ti', [(None, 0.0)], 0.0),
+                 ('l-li', 'li', [(None, 0.0)], 0.0)  # This case actually has l in the stem
              ]),
     })
 
@@ -73,23 +73,23 @@ def test_ch_ch_star():
 # stems must have more than one mora, but it's meaningless to add this restriction for
 # our purposes.
 sg_noun_parser = compile({
-    StemGuesser('.+', 'NounStem', ['Absolutive'], alphabet=nawat_alphabet, start=True),
+    StemGuesser('.+', 'NounStem', [('Absolutive', 0.0)], alphabet=nawat_alphabet, start=True),
     Slot('Absolutive',
          [
-             ('-t', 't', [], 0.0),
-             ('-ti', 'ti', [], 0.0),
-             ('l-li', 'li', [], 0.0)  # This case actually has l in the stem
+             ('-t', 't', [(None, 0.0)], 0.0),
+             ('-ti', 'ti', [(None, 0.0)], 0.0),
+             ('l-li', 'li', [(None, 0.0)], 0.0)  # This case actually has l in the stem
          ]),
     Slot('Possession',
          [
-             ('no-', 'no', ['PossessedNounStem'], 0.0),
-             ('mo-', 'mo', ['PossessedNounStem'], 0.0),
-             ('i:-', 'i:', ['PossessedNounStem'], 0.0),
-             ('to-', 'to', ['PossessedNounStem'], 0.0),
+             ('no-', 'no', [('PossessedNounStem', 0.0)], 0.0),
+             ('mo-', 'mo', [('PossessedNounStem', 0.0)], 0.0),
+             ('i:-', 'i:', [('PossessedNounStem', 0.0)], 0.0),
+             ('to-', 'to', [('PossessedNounStem', 0.0)], 0.0),
          ], start=True),
-    StemGuesser('.*', 'PossessedNounStem', ['Inalienable', 'Alienable'], alphabet=nawat_alphabet),
-    Slot('Inalienable', [('-yo', 'yo', [], 0.0)]),
-    Slot('Alienable', [('-w', 'w', [], 0.0), ('-0', '', [], 0.0)])
+    StemGuesser('.*', 'PossessedNounStem', [('Inalienable', 0.0), ('Alienable', 0.0)], alphabet=nawat_alphabet),
+    Slot('Inalienable', [('-yo', 'yo', [(None, 0.0)], 0.0)]),
+    Slot('Alienable', [('-w', 'w', [(None, 0.0)], 0.0), ('-0', '', [(None, 0.0)], 0.0)])
 })
 
 
