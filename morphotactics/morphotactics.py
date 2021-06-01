@@ -5,26 +5,30 @@ from morphotactics.slot import Slot
 import pywrapfst
 from typing import Set
 
-# A recursive, polymorphic depth-first graph search algorithm
+# An iterative, polymorphic depth-first graph search algorithm
 # Runs in O(|V| + |E|) if the state updates are O(1)
 # Adapted from CMU 15-210, Parallel & Sequential Data Structures & Algorithms
 # state: DFS state
 # visited: set of visited vertices
-# vertex: a vertex
+# start_vertex: the start vertex
 # neighbors: function to get the neighbors of a vertex as a list
 # visit: function that updates state upon first visit to a vertex
 # revisit: function that updates state upon second visit to a vertex
-# finish: function that updates state after iterating through all neighbors of a vertex
-def _dfs(state, visited, vertex, neighbors, visit, revisit, finish):
-  if vertex in visited:
-    return (revisit(state, vertex), visited)
-  else:
-    state = visit(state, vertex)
-    visited.add(vertex)
-    nbors = neighbors(vertex)
-    for nbor in nbors:
-      (state, visited) = _dfs(state, visited, nbor, neighbors, visit, revisit, finish)
-    return (finish(state, vertex), visited)
+def _dfs(state, visited, start_vertex, neighbors, visit, revisit):
+  stack = [start_vertex]
+
+  while stack:
+    vertex = stack.pop()
+    if vertex in visited:
+      state = revisit(state, vertex)
+    else:
+      state = visit(state, vertex)
+      visited.add(vertex)
+      nbors = neighbors(vertex)
+      for nbor in nbors:
+        if nbor not in visited:
+          stack.append(nbor)
+  return state
 
 def compile(slots: Set[Slot]) -> pynini.Fst:
   """
@@ -113,9 +117,6 @@ def compile(slots: Set[Slot]) -> pynini.Fst:
   def revisit(state, vertex): 
     # do nothing because Slot only needs to be processed once
     return state
-  
-  def finish(state, vertex): # do nothing
-    return state
 
   def neighbors(vertex):
     if vertex == 'start':
@@ -135,7 +136,7 @@ def compile(slots: Set[Slot]) -> pynini.Fst:
 
   # start_states maps Slot name to start state of the Slot so that we can concatenate a rule with its continuation classes
   start_states = {}
-  (start_states, _) = _dfs(start_states, set(), 'start', neighbors, first_visit, revisit, finish)
+  start_states = _dfs(start_states, set(), 'start', neighbors, first_visit, revisit)
 
   # second pass through all of the Slots
   # by this time, all Slots reachable from the start have been converted into FSTs
@@ -182,7 +183,7 @@ def compile(slots: Set[Slot]) -> pynini.Fst:
             fst.add_arc(final_state, arc)
     return
   
-  _dfs(None, set(), 'start', neighbors, second_pass, revisit, finish)
+  _dfs(None, set(), 'start', neighbors, second_pass, revisit)
 
   # verify the FST
   if not fst.verify():
