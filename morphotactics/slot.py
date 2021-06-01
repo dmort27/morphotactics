@@ -2,13 +2,19 @@ import pynini
 
 class Slot:
   """
-  A slot is analogous to a continuation class in LEXC.
+  A slot is analogous to a continuation class in LEXC, which is a group of rules
+  that can all serve as the continuation to some other class' rule. 
   It is acceptable that a slot for a rule's continuation class has not been declared by the time it is mentioned in a rule - compilation will handle this.
   This function only sets state, rules are processed lazily (i.e. only when compiled). 
 
-  Attributes:
-    name: name of the slot
-    rules: a list of tuples (upper alphabet symbols, lower alphabet symbols, list of continuation classes, rule weight)
+  Attributes
+  ----------
+    name: str
+      name of the slot
+    fst: pynini.Fst
+      a StemGuesser's compiled FSA
+    rules: list[tuple[str, str, list[tuple[str, float]], float]]
+      a list of tuples (upper alphabet symbols, lower alphabet symbols, list of continuation classes, rule weight)
         example: ('ni-', 'ni', [('RefObj', 0.8), (None, 0.3), ('VerbStem', 0.4)], 0.0)
         A rule's destination state is a final state if None is present in the continuation class list
         The rule weight is the weight of the transition from the slot's initial state to this particular rule
@@ -16,9 +22,22 @@ class Slot:
         A StemGuesser can be both a terminal and non-terminal class (as shown in example above)
         Empty list of continuation classes not allowed
         If a cont class is None, then the weight of the accepting state is the weight specified in the tuple
-    start (optional): the slot is one of the starting slots (root class in LEXC)
+    start: bool, optional
+      if the slot is one of the starting slots (root class in LEXC)
+    final_states: list[int]
+      used by the compiler to store a Slot's accepting states in the compiled FST
   """
+
   def __init__(self, name, rules, start=False):
+    """
+    Initializes Slot state
+    Does not actually process the rules (i.e. rules are lazily evaluated)
+
+    Args:
+      name: string
+      rules: list[tuple[str, str, list[tuple[str, float]], float]]
+      start: bool
+    """
     self.name = name
     self.fst = None
     for (_, _, cont_classes, _) in rules:

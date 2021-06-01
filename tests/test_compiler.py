@@ -8,8 +8,18 @@ import math
 import random
 
 # helpers
-# checks if input_str is in the language of the FSA
 def accepts(fsa, input_str):
+  """
+  Check if input_str is in the language of the FSA fsa
+  Pynini converts input_str into a linear chain automaton and composes it 
+  with the FSA. input_str is accepted if the composition has more than 1 state
+  
+  Args:
+    fsa (Fst): a finite-state acceptor
+    input_str (string): the string in question
+  Returns:
+    (boolean): True if input_str is in fsa's language
+  """
   return pynini.compose(input_str, fsa).num_states() != 0
 
 # transducers input_str belonging to lower alphabet to string in upper alphabet

@@ -3,25 +3,34 @@ from morphotactics.slot import Slot
 
 class StemGuesser(Slot):
   """
-  A StemGuesser is a special type of Slot that guesses stems
-  Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
-  Substitutes phoneme classes with symbols.
-  Assumes long vowels have been expanded. 
-  Unlike Slot, a StemGuesser's FST is eagerly evaluated
-  Args:
-    min_word_constraint: a minimal word constraint expressed as a limited regular expression of phone classes
-    
-    (same as that of Slot)
-    name: name of the StemGuesser Slot
-    cont_classes: list of continuation classes and their weights
-        example: [('PluralSuffix', 0.8), (None, 0.5)]
-        The StemGuesser's destination state is a final state if None is present in the list
-        A StemGuesser can be both a terminal and non-terminal class
-        Empty list of continuation classes are not allowed
-    alphabet (optional): dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
-    start (optional): the slot is one of root slots (root class in LEXC)
+  A StemGuesser is a special type of Slot that uses a finite-state acceptor
+  to identify stems in words so as to separate the stem from its affixes,
+  which will be processed by rules in other Slots
   """
   def __init__(self, min_word_constraint, name, cont_classes, alphabet={}, start=False):
+    """
+    Converts a limited PCRE regex (scope, quantification) to an OpenFst FST.
+    Substitutes phoneme classes with symbols.
+    Assumes long vowels have been expanded. 
+    Unlike Slot, a StemGuesser's FST is eagerly evaluated
+
+    Args:
+      min_word_constraint: str
+        a minimal word constraint expressed as a limited regular expression of phone classes
+      name: str
+        name of the StemGuesser Slot
+      cont_classes: list[tuple[str, float]]
+        list of continuation classes and their weights
+          example: [('PluralSuffix', 0.8), (None, 0.5)]
+          The StemGuesser's destination state is a final state if None is present in the list
+          A StemGuesser can be both a terminal and non-terminal class
+          Empty list of continuation classes are not allowed
+      alphabet: dict[str, list[str]], optional
+        dictionary mapping phone classes to list of symbols; if sigma (.) is used in the regex, alphabet is required
+      start: bool, optional
+        the slot is one of root slots (root class in LEXC)
+    """
+
     # phone classes could overlap so phones to set first
     symbols = {symb for symbol_class in alphabet.values() for symb in symbol_class}
 

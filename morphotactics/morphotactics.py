@@ -24,16 +24,18 @@ def _dfs(state, visited, vertex, neighbors, visit, revisit, finish):
       (state, visited) = _dfs(state, visited, nbor, neighbors, visit, revisit, finish)
     return (finish(state, vertex), visited)
 
-"""
-Returns an OpenFST FST representing the morphotactic rules of an entire lexicon
-Resolves all dependencies between continuation classes of multiple slots
-Requires that the slot dependencies are acyclic and form a directed acyclic graph
-Note: no slot can be named 'start'
-
-Args:
-  slots: set of Slot objects (not a list)
-"""
 def compile(slots):
+  """
+  Returns an OpenFST FST representing the morphotactic rules of an entire lexicon
+  Resolves all dependencies between continuation classes of multiple slots
+  Requires that the slot dependencies are acyclic and form a directed acyclic graph
+  Note: no slot can be named 'start'
+
+  Args:
+    slots: set of Slot objects (not a list)
+  Returns:
+    (Fst) FST connecting the slots
+  """
   # if dependencies are cyclic, we cannot use pynini to concatenate
   # rules to continuation classes' FSTs since pynini creates a copy of the 
   # continuation class' FST, and we might not have finished mutating it
