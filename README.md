@@ -62,7 +62,7 @@ Morphotactic rules specify the order in which morphemes can occur (e.g. suffix m
 
 Note that the rules within a class are lazily evaluated and only compiled into an FST when passed into the compile function. 
 
-Consider the following rule: ('a', 'b', [('class2', 1.0), (None, 2.0)], 100.0)
+Consider the following rule: ```('a', 'b', [('class2', 1.0), (None, 2.0)], 100.0)```
 
 You can think of a Slot as a union of different rules. Different rules can have 
 different weights (highlighted in yellow; 100.0 in the rule above), which represent the weight of transitioning to that particular rule from the Slot's starting state. 
