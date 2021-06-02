@@ -12,18 +12,68 @@ Use conda to install pynini and openfst. You need Python version 3.6+.
 1. Define Slots and StemGuessers
 2. compile
 
-TODO: full on example
+```python
+from morphotactics.slot import Slot
+from morphotactics.morphotactics import compile
+from morphotactics.stem_guesser import StemGuesser
 
+
+def symbol_table():
+  alphabet = list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz') + ['-']
+  st = pywrapfst.SymbolTable()
+  st.add_symbol('ϵ', 0)
+  for symb in alphabet:
+    st.add_symbol(symb, ord(symb))
+  return st
+
+st = symbol_table()
+
+fst = compile({
+  Slot('class1',
+    [
+      ('a', 'b', [('class2', 1.0), (None, 2.0)], 100.0),
+      ('c', 'd', [(None, 3.0)], 200.0),
+      ('e', 'f', [('class2', 4.0), ('class3', 5.0), (None, 6.0)], 300.0)
+    ],
+    start=True),
+  Slot('class2', 
+    [
+      ('g', 'h', [(None, 7.0)], 400.0),
+      ('i', 'j', [(None, 8.0)], 500.0),
+      ('k', 'l', [('class3', 9.0), (None, 10.0)], 600.0),
+    ]
+  ),
+  Slot('class3', 
+    [
+      ('m', 'n', [(None, 11.0)], 700.0),
+      ('o', 'p', [(None, 12.0)], 800.0),
+    ]
+  )
+})
+fst.draw('example.dot', portrait=True, isymbols=st, osymbols=st)
+```
+
+![image](https://user-images.githubusercontent.com/20138687/120417885-6e2ae800-c314-11eb-9ff4-9bc2d0a57411.png)
+
+Note the FST above was purposely not optimized for the sake of illustration. 
 
 ## Slot class
 Morphotactic rules specify the order in which morphemes can occur (e.g. suffix must occur after verb stem, prefix occurs before verb stem). We group types of morphemes together into classes. Each class specifies its continuation class (what can occur after). The Slot class is our version of a lexc continuation class. 
 
 Note that the rules within a class are lazily evaluated and only compiled into an FST when passed into the compile function. 
 
-You can think of a Slot as a union of different rules. 
+Consider the following rule: ('a', 'b', [('class2', 1.0), (None, 2.0)], 100.0)
 
-TODO: example of a rule and its FST - explaining the different weights and how a rule can be both terminal and non-terminal
-TODO: example of a Slot and its FST PRE-optimization
+You can think of a Slot as a union of different rules. Different rules can have 
+different weights (highlighted in yellow; 100.0 in the rule above), which represent the weight of transitioning to that particular rule from the Slot's starting state. 
+Each rule can have continuation classes, and None is used to indicate that a rule can be terminal. A rule can be both terminal and non-terminal. If a rule is purely terminal, its continuation class is None. 
+
+We can also assign weights to continuation classes (highlighted in green; 1.0 and 2.0 in the example above), which represent the weight of transitioning to a particular continuation class from some rule. Observe that 
+some of the rules' accepting states have weights on them. These are the weights specified
+along with None in the rule and indicate the weight of being accepted. This final state's weight is 
+counted in the weight of the path by ```all_strings_from_chain```. 
+
+Note that setting the weight of any state to any non-semiring zero value (anything non-infinity in the tropical semiring) makes the state an accepting state. 
 
 
 ## StemGuesser
@@ -68,14 +118,14 @@ rule-continuation class(es) pairs form edges. Also, we preserve non-deterministi
 One way of testing the correctness of an FST is by seeing what strings can be transduced by the FST and with what weight (if weights are added). 
 
 For an FSA (like StemGuesser), you can see if some input string is in the FSA:
-```
+```python
 def accepts(fsa, input_str):
   return pynini.compose(input_str, fsa).num_states() != 0
 ```
 
 For deterministic FSTs, there should only be one output string that can be transduced
 from one input string: 
-```
+```python
 def analyze(fst, input_str):
   return pynini.compose(input_str, fst).string()
 ```
@@ -104,7 +154,7 @@ Suppose you have some FST defined, ```fst```, then you would draw it with:
 
 The file extension should be dot and can be viewed in VSCode with the graphviz extension (https://marketplace.visualstudio.com/items?itemName=joaompinto.vscode-graphviz). If you would like to convert the dot file into a png, try the following (source: https://github.com/kylebgorman/pynini/issues/35):
 
-```
+```python
 def draw(fst):
   fst.draw(‘tmp.dot’, portrait=True, isymbols=fst.input_symbols(), osymbols=fst.output_symbols())
   graphviz.render(‘dot’, ‘svg’, ‘tmp.dot’, renderer=‘cairo’)
@@ -118,7 +168,7 @@ attach a SymbolTable to the drawing.
 
 Here is the SymbolTable for the English language:
 
-```
+```python
 import pywrapfst
 alphabet = list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz')
 st = pywrapfst.SymbolTable()
