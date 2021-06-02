@@ -99,8 +99,10 @@ nahuatl_alphabet = {
   'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
   'V': ['a', 'e', 'i', 'o']
 }
-StemGuesser('[CV]*V[CV]*V[CV]*', 'stem', [(None, 0.0)], nahuatl_alphabet)
+acceptor = StemGuesser('[CV]*V[CV]*V[CV]*', 'stem', [(None, 0.0)], nahuatl_alphabet)
 ```
+
+Note, the actual FST stored in StemGuesser is accessed via ```acceptor.fst```
 
 ![image](https://user-images.githubusercontent.com/20138687/120419500-78021a80-c317-11eb-9801-5b62f351b572.png)
 
