@@ -200,7 +200,8 @@ assert correct_transduction_and_weights(fst, 'b', [('c', 1.0), ('a', 2.0)])
 assert correct_transduction_and_weights(fst, 'bd', [('ce', 1.0 + 3.0), ('ae', 2.0 + 3.0)])
 ```
 
-![image](https://user-images.githubusercontent.com/20138687/120420591-76d1ed00-c319-11eb-8b3b-4a0483380a9b.png)
+![image](https://user-images.githubusercontent.com/20138687/120420770-ddefa180-c319-11eb-9132-ff431114919e.png)
+
 
 
 Note: if you see errors such as "start state invalid" or "_pywrapfst.FstOpError: Operation failed," this means the FST cannot perform the transduction because the FST
