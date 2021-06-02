@@ -92,7 +92,17 @@ Note that an FSA is just an FST with input and output transitions being the same
 
 Also, a StemGuesser is-a Slot, so it can have continuation classes and weights. 
 
-TODO: example
+An example of a minimal word constraint is the bimoraic constraint, which requires
+a word to have at least two mora.
+```python
+nahuatl_alphabet = {
+  'C': ['m', 'n', 'p', 't', 'k', 'kw', 'h', 'ts', 'tl', 'ch', 's', 'l', 'x', 'j', 'w'], 
+  'V': ['a', 'e', 'i', 'o']
+}
+StemGuesser('[CV]*V[CV]*V[CV]*', 'stem', [(None, 0.0)], nahuatl_alphabet)
+```
+
+![image](https://user-images.githubusercontent.com/20138687/120419500-78021a80-c317-11eb-9801-5b62f351b572.png)
 
 ## compile
 This is where we turn the rules into FSTs and we glue the different Slots together.  
