@@ -147,11 +147,60 @@ For non-deterministic FSTs, there can be many output strings that can be transdu
 which reduces the FST to only the transitions that input_str can follow. Next, we 
 use a DFS to find all strings that can be transduced from input_str, along with their weights. Refer to the function ```all_strings_from_chain```. The weight of each
 output string is obtained by taking the semiring product (⊗) of the weights along 
-the path and the weight of the final state. We use the tropical semiring, so we add the weights.
+the path and the weight of the final state. We use the tropical semiring, so we add the weights. To test if the weights are as expected, you can use the function
+```correct_transduction_and_weights```. 
 
 Note, if the FST is deterministic but weighted, use ```all_strings_from_chain```. 
 
-TODO: insert example
+Consider the following non-deterministic FST. The input string 'bd' can be transduced 
+into 'ac' through two paths, each with different paths. 
+```python
+from tests.test_compiler import correct_transduction_and_weights
+
+fst = compile({
+  Slot('class1',
+    [
+      ('a', 'b', [('class2', 0.0)], 1.0),
+      ('a', 'b', [('class3', 0.0)], 2.0)
+    ],
+    start=True),
+  Slot('class2',
+    [
+      ('c', 'd', [(None, 0.0)], 3.0)
+    ]),
+  Slot('class3',
+    [
+      ('c', 'd', [(None, 0.0)], 4.0)
+    ]),
+})
+assert correct_transduction_and_weights(fst, 'bd', [('ac', 1.0 + 3.0), ('ac', 2.0 + 4.0)])
+```
+
+![image](https://user-images.githubusercontent.com/20138687/120420060-6f5e1400-c318-11eb-8e6a-c3e205da7ccb.png)
+
+
+
+Consider the following deterministic FST. The input string 'bd' can be transduced
+into 'ce' and 'ae'. 
+
+```python
+fst = compile({
+  Slot('class1',
+    [
+      ('c', 'b', [('class2', 0.0), (None, 0.0)], 1.0),
+      ('a', 'b', [('class2', 0.0), (None, 0.0)], 2.0)
+    ],
+    start=True),
+  Slot('class2',
+    [
+      ('e', 'd', [(None, 0.0)], 3.0)
+    ]),
+})
+assert correct_transduction_and_weights(fst, 'b', [('c', 1.0), ('a', 2.0)])
+assert correct_transduction_and_weights(fst, 'bd', [('ce', 1.0 + 3.0), ('ae', 2.0 + 3.0)])
+```
+
+![image](https://user-images.githubusercontent.com/20138687/120420591-76d1ed00-c319-11eb-8b3b-4a0483380a9b.png)
 
 
 Note: if you see errors such as "start state invalid" or "_pywrapfst.FstOpError: Operation failed," this means the FST cannot perform the transduction because the FST
