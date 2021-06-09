@@ -86,9 +86,10 @@ sg_noun_parser = compile({
     ]),
     StemGuesser('.*VC', 'NounStemC', [
         ('C-Absolutive', 100.0),
-        (None, 0.0)  # This rarer case mostly occurs when ending in -l or -s with more than one mora
+        (None, 0.0),  # This rarer case mostly occurs when ending in -l or -s with more than one mora
+        ('tsin', 0.0)
     ], alphabet=nawat_alphabet),
-    Slot('C-Absolutive', [('-ti', 'ti', [(None, 0.0), ('tsin', 0.0)], 0.0)]),
+    Slot('C-Absolutive', [('-ti', 'ti', [(None, 0.0)], 0.0)]),
     StemGuesser('.*V', 'NounStemV', [('V-Absolutive', 0.0), ('tsin', 0.0)], alphabet=nawat_alphabet),
     Slot('V-Absolutive', [
         ('-t', 't', [(None, 0.0)], 0.0),
