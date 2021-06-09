@@ -94,8 +94,8 @@ def correct_transduction_and_weights(fst: pynini.Fst, input_str: str, expected_p
   if len(output_paths) != len(expected_paths):
     return False
 
-  output_paths = sorted(output_paths, key=lambda x: x[1])
-  expected_paths = sorted(expected_paths, key=lambda x: x[1])
+  output_paths = sorted(output_paths, key=lambda x: (x[1], x[0]))
+  expected_paths = sorted(expected_paths, key=lambda x: (x[1], x[0]))
 
   for ((str1, weight1), (str2, weight2)) in zip(output_paths, expected_paths):
     if str1 != str2:
