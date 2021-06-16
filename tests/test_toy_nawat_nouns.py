@@ -87,10 +87,15 @@ sg_noun_parser = compile({
     StemGuesser('.*VC', 'NounStemC', [
         ('C-Absolutive', 100.0),
         (None, 0.0),  # This rarer case mostly occurs when ending in -l or -s with more than one mora
-        ('tsin', 0.0)
+        ('tsin', 100.0),
+        ('Locative', 0.0)
     ], alphabet=nawat_alphabet),
     Slot('C-Absolutive', [('-ti', 'ti', [(None, 0.0)], 0.0)]),
-    StemGuesser('.*V', 'NounStemV', [('V-Absolutive', 0.0), ('tsin', 0.0)], alphabet=nawat_alphabet),
+    StemGuesser('.*V', 'NounStemV', [
+        ('V-Absolutive', 100.0),
+        ('tsin', 100.0),
+        ('Locative', 0.0)
+    ], alphabet=nawat_alphabet),
     Slot('V-Absolutive', [
         ('-t', 't', [(None, 0.0)], 0.0),
         ('l-li', 'li', [(None, 0.0)], 0.0)  # Here, l is actually part of the stem, but easier to do this way
@@ -104,21 +109,40 @@ sg_noun_parser = compile({
         ('t-', 't', [('oPossessedNounStem', 0.0)], 0.0),
         ('i-', 'i', [('PossessedNounStem', 0.0)], 0.0),
         ('i:-', 'i:', [('PossessedNounStem', 0.0)], 0.0),
+        ('in-', 'in', [('PossessedNounStem', 0.0)], 0.0),
+        ('i:n-', 'i:n', [('PossessedNounStem', 0.0)], 0.0),
     ]),
     StemGuesser('.+', 'PossessedNounStem', [
-        (None, 0.0), ('InalienablePossession', 0.0), ('tsin', 0.0)
+        (None, 0.0), ('InalienablePossession', 0.0), ('tsin', 0.0), ('Locative', 0.0)
     ], alphabet=nawat_alphabet),
     StemGuesser('o.+', 'oPossessedNounStem', [
-        (None, 0.0), ('InalienablePossession', 0.0), ('tsin', 0.0)
+        (None, 0.0), ('InalienablePossession', 0.0), ('tsin', 0.0), ('Locative', 0.0)
     ], alphabet=nawat_alphabet),
     Slot('InalienablePossession', [
         ('-yo', 'yo', [(None, 0.0), ('tsin', 0.0)], 0.0)
     ]),
     Slot('tsin', [
-        ('-tsin', 'tsin', [(None, 0.0)], 0.0),
-        ('-tsini', 'tsini', [(None, 0.0)], 0.0),
-        ('-tsi:n', 'tsi:n', [(None, 0.0)], 0.0),
-        ('-tsi:ni', 'tsi:ni', [(None, 0.0)], 0.0),
+        ('-tsin', 'tsin', [(None, 0.0)], 100.0),
+        ('-tsini', 'tsini', [(None, 0.0)], 100.0),
+        ('-tsi:n', 'tsi:n', [(None, 0.0)], 100.0),
+        ('-tsi:ni', 'tsi:ni', [(None, 0.0)], 100.0),
+        ('-tsín', 'tsín', [(None, 0.0)], 100.0),
+        ('-tsíni', 'tsíni', [(None, 0.0)], 100.0),
+        ('-tsí:n', 'tsí:n', [(None, 0.0)], 100.0),
+        ('-tsí:ni', 'tsí:ni', [(None, 0.0)], 100.0),
+    ]),
+    Slot('Locative', [
+        ('-ko', 'ko', [(None, 0.0)], 100.0),
+        ('-pan', 'pan', [(None, 0.0)], 100.0),
+        ('-ti-pan', 'tipan', [(None, 0.0)], 100.0),
+        ('-tan-pa', 'tampa', [(None, 0.0)], 100.0),
+        ('-nakas-tan', 'nakastan', [(None, 0.0)], 100.0),
+        ('-tsi:n-tan', 'tsi:ntan', [(None, 0.0)], 100.0),
+        ('-i:x-ko', 'i:xko', [(None, 0.0)], 100.0),
+        ('-tikpak', 'tikpak', [(None, 0.0)], 100.0),
+        ('-tah', 'tah', [(None, 0.0)], 100.0),
+        ('-ti-tan', 'titan', [(None, 0.0)], 100.0),
+        ('-yá:n', 'yá:n', [(None, 0.0)], 100.0),
     ])
 })
 
@@ -155,3 +179,6 @@ def test_toy_nawat_sg_noun_parser():
 
     # ta:l - earth. Takes no absolutive.
     assert parses(sg_noun_parser, 'ta:l', '0-ta:l')
+
+    # imitsko - by its feet
+    assert parses(sg_noun_parser, 'imitsko', '0-i-mits-ko')
