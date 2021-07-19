@@ -1,5 +1,5 @@
 import pynini
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 class Slot:
   """
@@ -29,7 +29,7 @@ class Slot:
       used by the compiler to store a Slot's accepting states in the compiled FST
   """
 
-  def __init__(self, name: str, rules: List[Tuple[str, str, List[Tuple[str, float]], float]], start: bool=False):
+  def __init__(self, name: str, rules: List[Tuple[str, str, List[Tuple[Optional[str], float]], float]], start: bool=False):
     """
     Initializes Slot state
     Does not actually process the rules (i.e. rules are lazily evaluated)
