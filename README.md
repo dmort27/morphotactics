@@ -245,5 +245,6 @@ Finally, attach the SymbolTable to the FST as follows:
 ```fst.draw(file_name, portrait=True, isymbols=st, osymbols=st)```
 
 ## Tests
-To run the tests, run
-```python -m pytest``` from the root directory
+To run the tests,
+1. Build the app. Run ```pip3 install --editable .``` from the root directory
+2. Run ```python -m pytest``` from the root directory
